@@ -1,0 +1,20 @@
+{
+  "name": "curadoria-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "start": "serve -s dist -l ${PORT:-8080}"
+  },
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest",
+    "serve": "latest"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest"
+  }
+}
