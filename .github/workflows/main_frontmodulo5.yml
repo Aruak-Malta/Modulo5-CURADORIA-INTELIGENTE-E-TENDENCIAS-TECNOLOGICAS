@@ -22,11 +22,28 @@ jobs:
         with:
           node-version: "24.x"
 
-      - name: Install dependencies and build
+      - name: Build frontend
         run: |
           npm install
           npm run build
-          rm -rf dist
+
+      - name: Prepare Azure package
+        run: |
+          mkdir -p deploy
+          cp -R dist/. deploy/
+          cat > deploy/package.json <<'EOF'
+          {
+            "name": "curadoria-frontend-deploy",
+            "version": "1.0.0",
+            "private": true,
+            "scripts": {
+              "start": "serve -s . -l ${PORT:-8080}"
+            },
+            "dependencies": {
+              "serve": "14.2.4"
+            }
+          }
+          EOF
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -40,4 +57,4 @@ jobs:
         with:
           app-name: frontmodulo5
           slot-name: Production
-          package: .
+          package: ./deploy
