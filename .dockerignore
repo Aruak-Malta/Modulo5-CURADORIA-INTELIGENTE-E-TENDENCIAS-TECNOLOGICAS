@@ -4,5 +4,6 @@ dist
 .github
 .env
 .env.*
-!.env.example
-npm-debug.log*
+*.log
+README.md
+requirements.txt

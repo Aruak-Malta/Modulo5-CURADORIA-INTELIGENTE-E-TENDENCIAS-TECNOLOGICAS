@@ -9,14 +9,17 @@ const sugestoes = [
   "Novidades sobre inteligência artificial",
 ];
 
+function criarMensagem(tipo, texto, adicionais = {}) {
+  return { id: crypto.randomUUID(), tipo, texto, ...adicionais };
+}
+
 export default function ChatPage() {
   const [pergunta, setPergunta] = useState("");
-  const [mensagens, setMensagens] = useState([
-    {
-      tipo: "ia",
-      texto:
-        "Olá! Sou o assistente de curadoria. Pergunte sobre uma tecnologia para encontrar artigos relacionados.",
-    },
+  const [mensagens, setMensagens] = useState(() => [
+    criarMensagem(
+      "ia",
+      "Olá! Sou o assistente de curadoria. Pergunte sobre uma tecnologia para encontrar artigos relacionados.",
+    ),
   ]);
   const [historico, setHistorico] = useState([]);
   const [carregando, setCarregando] = useState(false);
@@ -29,7 +32,7 @@ export default function ChatPage() {
     setPergunta("");
     setMensagens((atuais) => [
       ...atuais,
-      { tipo: "usuario", texto: perguntaEnviada },
+      criarMensagem("usuario", perguntaEnviada),
     ]);
     setHistorico((atuais) =>
       [perguntaEnviada, ...atuais.filter((item) => item !== perguntaEnviada)].slice(
@@ -45,22 +48,21 @@ export default function ChatPage() {
 
       setMensagens((atuais) => [
         ...atuais,
-        {
-          tipo: "ia",
-          texto: artigos.length
+        criarMensagem(
+          "ia",
+          artigos.length
             ? `Encontrei ${artigos.length} artigo(s) relacionado(s):`
             : "Não encontrei artigos. Tente perguntar usando outros termos.",
-          artigos,
-        },
+          { artigos },
+        ),
       ]);
     } catch (erro) {
       setMensagens((atuais) => [
         ...atuais,
-        {
-          tipo: "ia",
-          texto:
-            "Não consegui acessar a API. Confira se o FastAPI está rodando e tente novamente.",
-        },
+        criarMensagem(
+          "ia",
+          "Não consegui acessar a API. Confira a URL e a disponibilidade do serviço e tente novamente.",
+        ),
       ]);
       console.error(erro);
     } finally {
@@ -75,10 +77,10 @@ export default function ChatPage() {
 
   function novaConversa() {
     setMensagens([
-      {
-        tipo: "ia",
-        texto: "Nova conversa. Sobre qual tecnologia você quer pesquisar?",
-      },
+      criarMensagem(
+        "ia",
+        "Nova conversa. Sobre qual tecnologia você quer pesquisar?",
+      ),
     ]);
     setPergunta("");
   }
@@ -109,7 +111,7 @@ export default function ChatPage() {
 
         <div className="api-status">
           <span />
-          API local
+          API de curadoria
         </div>
       </aside>
 
@@ -150,10 +152,10 @@ export default function ChatPage() {
         </header>
 
         <section className="messages" aria-live="polite">
-          {mensagens.map((mensagem, indice) => (
+          {mensagens.map((mensagem) => (
             <article
               className={`message message--${mensagem.tipo}`}
-              key={`${mensagem.tipo}-${indice}`}
+              key={mensagem.id}
             >
               <p>{mensagem.texto}</p>
 

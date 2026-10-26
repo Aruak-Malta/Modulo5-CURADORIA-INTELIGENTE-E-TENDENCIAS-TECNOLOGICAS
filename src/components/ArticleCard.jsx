@@ -1,3 +1,5 @@
+import PropTypes from "prop-types";
+
 export default function ArticleCard({ artigo }) {
   return (
     <a
@@ -11,3 +13,10 @@ export default function ArticleCard({ artigo }) {
     </a>
   );
 }
+
+ArticleCard.propTypes = {
+  artigo: PropTypes.shape({
+    link: PropTypes.string.isRequired,
+    titulo: PropTypes.string.isRequired,
+  }).isRequired,
+};
