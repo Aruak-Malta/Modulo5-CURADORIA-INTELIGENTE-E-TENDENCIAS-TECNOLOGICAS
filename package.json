@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "lint": "eslint . --ext .js,.jsx",
     "build": "vite build",
+    "test": "node --test src/services/curadoriaApi.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -13,7 +15,9 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.4.14"
+    "@vitejs/plugin-react": "^5.2.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.5",
+    "vite": "^6.4.4"
   }
 }

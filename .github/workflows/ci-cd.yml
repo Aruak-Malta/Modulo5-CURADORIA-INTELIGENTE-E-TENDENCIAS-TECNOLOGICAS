@@ -1,0 +1,181 @@
+name: CI/CD - Azure App Service
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, tests and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run automated tests
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag curadoria-inteligente:ci \
+            --build-arg VITE_API_URL="${VITE_API_URL}" \
+            .
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+
+      - name: Validate production configuration
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          AZURE_CLIENT_ID: ${{ secrets[vars.AZURE_CLIENT_ID_SECRET] }}
+          AZURE_TENANT_ID: ${{ secrets[vars.AZURE_TENANT_ID_SECRET] }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets[vars.AZURE_SUBSCRIPTION_ID_SECRET] }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        run: |
+          for name in VITE_API_URL AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID GHCR_READ_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Required production configuration is missing: ${name}."
+              exit 1
+            fi
+          done
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check dependency changes
+        uses: actions/dependency-review-action@v4
+
+  publish-image:
+    name: Publish Docker image
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs:
+      - checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+      tag: ${{ steps.image.outputs.tag }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set image name
+        id: image
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "tag=sha-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image tags
+        id: metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=sha,prefix=sha-,format=long
+            type=raw,value=latest
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          build-args: |
+            VITE_API_URL=${{ vars.VITE_API_URL }}
+
+  deploy:
+    name: Deploy container to Azure App Service
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs:
+      - publish-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      APP_NAME: ${{ vars.AZURE_WEBAPP_NAME || 'FrontModulo5' }}
+    steps:
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets[vars.AZURE_CLIENT_ID_SECRET] }}
+          tenant-id: ${{ secrets[vars.AZURE_TENANT_ID_SECRET] }}
+          subscription-id: ${{ secrets[vars.AZURE_SUBSCRIPTION_ID_SECRET] }}
+
+      - name: Find App Service resource group
+        id: app
+        run: |
+          resource_group="$(az webapp list --query "[?name=='${APP_NAME}'].resourceGroup | [0]" --output tsv)"
+          if [ -z "$resource_group" ]; then
+            echo "::error::App Service '${APP_NAME}' was not found in the selected Azure subscription."
+            exit 1
+          fi
+          echo "resource-group=$resource_group" >> "$GITHUB_OUTPUT"
+
+      - name: Configure and restart App Service container
+        env:
+          IMAGE: ${{ needs.publish-image.outputs.image }}:${{ needs.publish-image.outputs.tag }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        run: |
+          if [ -z "$GHCR_READ_TOKEN" ]; then
+            echo "::error::Create the GHCR_READ_TOKEN repository secret with read:packages access."
+            exit 1
+          fi
+          az webapp config container set \
+            --resource-group "${{ steps.app.outputs.resource-group }}" \
+            --name "$APP_NAME" \
+            --docker-custom-image-name "$IMAGE" \
+            --docker-registry-server-url https://ghcr.io \
+            --docker-registry-server-user "${{ github.repository_owner }}" \
+            --docker-registry-server-password "$GHCR_READ_TOKEN" \
+            --output none
+          az webapp restart \
+            --resource-group "${{ steps.app.outputs.resource-group }}" \
+            --name "$APP_NAME"

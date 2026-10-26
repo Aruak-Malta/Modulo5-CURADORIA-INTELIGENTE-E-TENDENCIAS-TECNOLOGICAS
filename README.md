@@ -21,31 +21,53 @@ Para validar o build de produção:
 npm run build
 ```
 
-## Publicar no Azure
+## CI/CD e publicação no Azure
 
-Este repositório contém o frontend React, não uma aplicação Python nem uma
-Azure Function. Publique-o como **Azure Static Web App** e use:
+O workflow em `.github/workflows/ci-cd.yml` executa lint, testes, build do
+frontend e build Docker em pull requests. Em push na `main`, publica a imagem
+no GitHub Container Registry (GHCR) e atualiza automaticamente o Azure App
+Service para Containers. Docker não é obrigatório para toda forma de publicação
+do frontend, mas foi adotado aqui para atender à atividade de App Service com
+containers.
 
-- Predefinição de build: **React**
-- Local do aplicativo: `/`
-- Local da API: vazio
-- Local de saída: `dist`
-- Comando de build: `npm run build` (se o Azure solicitar)
+### Configuração necessária no GitHub
 
-Se o GitHub Actions criado para o repositório tentar configurar Python ou
-instalar `requirements.txt`, ele foi criado com a configuração errada. Use o
-workflow do Azure Static Web Apps/React em vez de adicionar um `requirements.txt`
-ao frontend.
+Em **Settings → Secrets and variables → Actions**, configure:
 
-Configure `VITE_API_URL` com a URL pública da API, incluindo `/consultas`, no
-ambiente de build do GitHub Actions, criando uma variável de repositório
-`VITE_API_URL`. O workflow do Azure Static Web Apps disponível neste repositório
-usa essa variável durante o build.
+- Secret `GHCR_READ_TOKEN`: Personal Access Token com permissão `read:packages`
+  para o proprietário da imagem no GHCR. O valor é usado pelo App Service para
+  baixar a imagem privada; não o coloque no código.
+- Secrets Azure `AZUREAPPSERVICE_CLIENTID_...`,
+  `AZUREAPPSERVICE_TENANTID_...` e `AZUREAPPSERVICE_SUBSCRIPTIONID_...`: use
+  os secrets da identidade federada autorizada a atualizar esse App Service.
+- Variables `AZURE_CLIENT_ID_SECRET`, `AZURE_TENANT_ID_SECRET` e
+  `AZURE_SUBSCRIPTION_ID_SECRET`: informe em cada uma o **nome exato** do secret
+  Azure correspondente (não o valor secreto). Isso permite escolher o conjunto
+  correto caso existam várias identidades cadastradas.
+- Variable `VITE_API_URL`: URL pública da API, incluindo `/consultas`.
+- Opcional: variable `AZURE_WEBAPP_NAME` se o nome do App Service for diferente
+  de `FrontModulo5`.
 
-Essa URL é incorporada ao frontend durante o build. A API também precisa
-permitir requisições CORS originadas pelo domínio publicado no Azure.
+A identidade Azure precisa ter uma credencial federada para este repositório e
+o branch `main`, além de permissão para configurar e reiniciar o App Service
+(por exemplo, **Contributor** no recurso ou grupo de recursos). O workflow
+descobre o grupo de recursos pelo nome do app.
 
-No GitHub, crie o segredo `AZURE_STATIC_WEB_APPS_API_TOKEN` com o token de
-implantação da Static Web App (Azure Portal → recurso → **Manage deployment
-token**). Se já existir outro workflow Python no repositório, desative-o para
-que ele não continue tentando instalar `requirements.txt`.
+O token criado para GHCR deve ter acesso de leitura ao pacote. A publicação no
+GHCR usa o `GITHUB_TOKEN` do próprio workflow, com permissão `packages: write`.
+Configure também a API para aceitar CORS do domínio do frontend publicado.
+
+### Dependabot
+
+O `.github/dependabot.yml` verifica semanalmente dependências npm e GitHub
+Actions. Pull requests também passam pela verificação de alterações de
+dependências antes de serem aceitos.
+
+### Docker local
+
+```bash
+docker build --build-arg VITE_API_URL=https://sua-api/consultas -t curadoria-inteligente .
+docker run --rm -p 8080:80 curadoria-inteligente
+```
+
+Abra `http://localhost:8080` para testar o container.
