@@ -1,16 +1,67 @@
-# React + Vite
+# Curadoria Inteligente
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend React para o assistente de curadoria de artigos sobre tecnologia.
 
-Currently, two official plugins are available:
+## Rodar localmente
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Requer Node.js 18 ou superior.
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Configure `VITE_API_URL` para apontar a interface para outra API. Em ambiente
+local, copie `.env.example` para `.env`; sem configuração, a aplicação usa a API
+publicada do projeto.
 
-## Expanding the ESLint configuration
+Para validar o build de produção:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm run build
+```
+
+## CI/CD e publicação no Azure
+
+O workflow em `.github/workflows/main.yml` executa lint, testes, auditoria das
+dependências e builds do frontend e Docker em pull requests. Em push na `main`,
+publica a imagem no GitHub Container Registry (GHCR) e faz deploy automático
+no Azure App Service `FrontModulo5`.
+
+### Configuração necessária no GitHub
+
+Em **Settings → Secrets and variables → Actions**, configure:
+
+- Secret `GHCR_READ_TOKEN`: Personal Access Token com permissão `read:packages`
+  para o proprietário da imagem no GHCR. O valor é usado pelo App Service para
+  baixar a imagem privada; não o coloque no código.
+- Secrets Azure `AZUREAPPSERVICE_CLIENTID_...`,
+  `AZUREAPPSERVICE_TENANTID_...` e `AZUREAPPSERVICE_SUBSCRIPTIONID_...` já
+  referenciados pelo workflow. A identidade federada deve ter acesso ao app.
+- Opcional: variable `VITE_API_URL` com a URL pública da API, incluindo
+  `/consultas`. Se não for definida, o frontend usa a API publicada do projeto.
+
+A identidade Azure precisa ter uma credencial federada para este repositório e
+o branch `main`, além de permissão para configurar e reiniciar o App Service
+(por exemplo, **Contributor** no recurso ou grupo de recursos). O workflow
+descobre o grupo de recursos do App Service pelo nome do app.
+
+O token criado para GHCR deve ter acesso de leitura ao pacote. A publicação no
+GHCR usa o `GITHUB_TOKEN` do próprio workflow, com permissão `packages: write`.
+Configure também a API para aceitar CORS do domínio do frontend publicado.
+O workflow atualiza o App Service `FrontModulo5` e configura sua porta Docker
+como `8080`.
+
+### Dependabot
+
+O `.github/dependabot.yml` verifica semanalmente dependências npm, Docker e
+GitHub Actions. O workflow também executa `npm audit` nos pull requests.
+
+### Docker local
+
+```bash
+docker build --build-arg VITE_API_URL=https://sua-api/consultas -t curadoria-inteligente .
+docker run --rm -p 8080:8080 curadoria-inteligente
+```
+
+Abra `http://localhost:8080` para testar o container.

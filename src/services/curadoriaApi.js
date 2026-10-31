@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:8000/consultas";
+const API_URL =
+  import.meta.env?.VITE_API_URL ||
+  "https://agente-tendencias-tecnologicas-fyd3bzerc9a2cqcu.chilecentral-01.azurewebsites.net/consultas";
 
 export async function consultarArtigos(pergunta) {
   const resposta = await fetch(API_URL, {
