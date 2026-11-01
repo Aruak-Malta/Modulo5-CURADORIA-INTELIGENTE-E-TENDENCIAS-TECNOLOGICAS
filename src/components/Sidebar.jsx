@@ -66,3 +66,4 @@ Sidebar.propTypes = {
   paginaAtual: PropTypes.string,
   aoNavegar: PropTypes.func.isRequired,
 };
+
