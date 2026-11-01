@@ -3,6 +3,7 @@ import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ChatHistory from "../components/ChatHistory";
 import MessageList from "../components/MessageList";
+import MessageInput from "../components/MessageInput";
 import { consultarArtigos } from "../services/curadoriaApi";
 import "./ChatPage.css";
 
@@ -73,7 +74,6 @@ export default function ChatPage() {
   const mensagens = conversaAtiva?.mensagens ?? [];
   const carregando = conversaCarregandoId !== null;
 
-  // Apenas conversas com perguntas aparecem no histórico.
   const historico = conversas.filter(temPergunta);
 
   function navegar(pagina) {
@@ -83,7 +83,6 @@ export default function ChatPage() {
   }
 
   function novaConversa() {
-    // Impede criar várias conversas vazias.
     if (conversaAtiva && !temPergunta(conversaAtiva)) {
       setPergunta("");
       setPaginaAtual("chat");
@@ -201,11 +200,6 @@ export default function ChatPage() {
     }
   }
 
-  function enviarFormulario(evento) {
-    evento.preventDefault();
-    enviarPergunta();
-  }
-
   function renderizarChat() {
     return (
       <>
@@ -248,38 +242,12 @@ export default function ChatPage() {
               </div>
             )}
 
-            <form
-              className="composer"
-              onSubmit={enviarFormulario}
-            >
-              <textarea
-                value={pergunta}
-                onChange={(evento) =>
-                  setPergunta(evento.target.value)
-                }
-                onKeyDown={(evento) => {
-                  if (
-                    evento.key === "Enter" &&
-                    !evento.shiftKey &&
-                    !evento.nativeEvent.isComposing
-                  ) {
-                    evento.preventDefault();
-                    enviarPergunta();
-                  }
-                }}
-                placeholder="Pergunte sobre uma tecnologia..."
-                aria-label="Digite sua pergunta"
-                rows={1}
-              />
-
-              <button
-                type="submit"
-                disabled={!pergunta.trim() || carregando}
-                aria-label="Enviar pergunta"
-              >
-                ↑
-              </button>
-            </form>
+            <MessageInput
+              pergunta={pergunta}
+              aoAlterarPergunta={setPergunta}
+              aoEnviar={enviarPergunta}
+              carregando={carregando}
+            />
 
             <small className="composer-hint">
               Enter envia · Shift+Enter quebra a linha
