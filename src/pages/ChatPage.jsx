@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
-import ArticleCard from "../components/ArticleCard";
+import ChatHistory from "../components/ChatHistory";
+import MessageList from "../components/MessageList";
 import { consultarArtigos } from "../services/curadoriaApi";
 import "./ChatPage.css";
 
@@ -31,19 +32,49 @@ function criarMensagem(tipo, texto, adicionais = {}) {
   };
 }
 
+function criarConversa() {
+  return {
+    id: crypto.randomUUID(),
+    titulo: "Nova conversa",
+    mensagens: [
+      criarMensagem(
+        "ia",
+        "Olá! Sou o assistente de curadoria. Sobre qual tecnologia você quer pesquisar?"
+      ),
+    ],
+  };
+}
+
+function temPergunta(conversa) {
+  return conversa.mensagens.some(
+    (mensagem) => mensagem.tipo === "usuario"
+  );
+}
+
 export default function ChatPage() {
   const [paginaAtual, setPaginaAtual] = useState("chat");
+
+  const [conversas, setConversas] = useState(
+    () => [criarConversa()]
+  );
+
+  const [conversaAtivaId, setConversaAtivaId] = useState(
+    () => conversas[0].id
+  );
+
   const [pergunta, setPergunta] = useState("");
+  const [conversaCarregandoId, setConversaCarregandoId] =
+    useState(null);
 
-  const [mensagens, setMensagens] = useState(() => [
-    criarMensagem(
-      "ia",
-      "Olá! Sou o assistente de curadoria. Pergunte sobre uma tecnologia para encontrar artigos relacionados."
-    ),
-  ]);
+  const conversaAtiva = conversas.find(
+    (conversa) => conversa.id === conversaAtivaId
+  );
 
-  const [historico, setHistorico] = useState([]);
-  const [carregando, setCarregando] = useState(false);
+  const mensagens = conversaAtiva?.mensagens ?? [];
+  const carregando = conversaCarregandoId !== null;
+
+  // Apenas conversas com perguntas aparecem no histórico.
+  const historico = conversas.filter(temPergunta);
 
   function navegar(pagina) {
     if (pagina === "chat" || paginas[pagina]) {
@@ -51,56 +82,122 @@ export default function ChatPage() {
     }
   }
 
-  async function enviarPergunta(texto = pergunta) {
-    const perguntaEnviada = texto.trim();
-
-    if (!perguntaEnviada || carregando) {
+  function novaConversa() {
+    // Impede criar várias conversas vazias.
+    if (conversaAtiva && !temPergunta(conversaAtiva)) {
+      setPergunta("");
+      setPaginaAtual("chat");
       return;
     }
 
-    setPaginaAtual("chat");
-    setPergunta("");
+    const conversa = criarConversa();
 
-    setMensagens((atuais) => [
-      ...atuais,
-      criarMensagem("usuario", perguntaEnviada),
+    setConversas((atuais) => [
+      conversa,
+      ...atuais.filter(temPergunta),
     ]);
 
-    setHistorico((atuais) =>
-      [
-        perguntaEnviada,
-        ...atuais.filter((item) => item !== perguntaEnviada),
-      ].slice(0, 5)
+    setConversaAtivaId(conversa.id);
+    setPergunta("");
+    setPaginaAtual("chat");
+  }
+
+  function selecionarConversa(id) {
+    const existe = conversas.some(
+      (conversa) => conversa.id === id
     );
 
-    setCarregando(true);
+    if (!existe) return;
+
+    setConversaAtivaId(id);
+    setPergunta("");
+    setPaginaAtual("chat");
+  }
+
+  function adicionarMensagem(conversaId, mensagem) {
+    setConversas((atuais) =>
+      atuais.map((conversa) => {
+        if (conversa.id !== conversaId) {
+          return conversa;
+        }
+
+        return {
+          ...conversa,
+          mensagens: [
+            ...conversa.mensagens,
+            mensagem,
+          ],
+        };
+      })
+    );
+  }
+
+  async function enviarPergunta(texto = pergunta) {
+    const perguntaEnviada = texto.trim();
+
+    if (!perguntaEnviada || carregando || !conversaAtiva) {
+      return;
+    }
+
+    const id = conversaAtiva.id;
+
+    setPergunta("");
+    setPaginaAtual("chat");
+
+    const mensagemUsuario = criarMensagem(
+      "usuario",
+      perguntaEnviada
+    );
+
+    setConversas((atuais) =>
+      atuais.map((conversa) => {
+        if (conversa.id !== id) {
+          return conversa;
+        }
+
+        const primeiraPergunta = !temPergunta(conversa);
+
+        return {
+          ...conversa,
+          titulo: primeiraPergunta
+            ? perguntaEnviada.slice(0, 45)
+            : conversa.titulo,
+          mensagens: [
+            ...conversa.mensagens,
+            mensagemUsuario,
+          ],
+        };
+      })
+    );
+
+    setConversaCarregandoId(id);
 
     try {
       const dados = await consultarArtigos(perguntaEnviada);
       const artigos = dados.artigos ?? [];
 
-      setMensagens((atuais) => [
-        ...atuais,
+      adicionarMensagem(
+        id,
         criarMensagem(
           "ia",
-          artigos.length
+          artigos.length > 0
             ? `Encontrei ${artigos.length} artigo(s) relacionado(s):`
-            : "Não encontrei artigos. Tente utilizar outros termos.",
+            : "Não encontrei artigos relacionados. Tente utilizar outros termos.",
           { artigos }
-        ),
-      ]);
+        )
+      );
     } catch (erro) {
       console.error("Erro ao consultar API:", erro);
 
-      setMensagens((atuais) => [
-        ...atuais,
+      adicionarMensagem(
+        id,
         criarMensagem(
           "ia",
           "Não consegui acessar a API de curadoria. Tente novamente."
-        ),
-      ]);
+        )
+      );
     } finally {
-      setCarregando(false);
+      setConversaCarregandoId(null);
     }
   }
 
@@ -109,150 +206,94 @@ export default function ChatPage() {
     enviarPergunta();
   }
 
-  function novaConversa() {
-    setPaginaAtual("chat");
-    setMensagens([
-      criarMensagem(
-        "ia",
-        "Nova conversa. Sobre qual tecnologia você quer pesquisar?"
-      ),
-    ]);
-    setPergunta("");
-  }
-
-  function renderizarHistorico() {
-    return (
-      <aside className="history">
-        <button
-          className="new-chat-button"
-          type="button"
-          onClick={novaConversa}
-        >
-          + Nova conversa
-        </button>
-
-        <p className="section-label">
-          CONSULTAS RECENTES
-        </p>
-
-        {historico.length === 0 ? (
-          <p className="history__empty">
-            Suas perguntas recentes aparecerão aqui.
-          </p>
-        ) : (
-          historico.map((item) => (
-            <button
-              className="history-item"
-              type="button"
-              key={item}
-              onClick={() => enviarPergunta(item)}
-              disabled={carregando}
-              title={item}
-            >
-              {item}
-            </button>
-          ))
-        )}
-      </aside>
-    );
-  }
-
   function renderizarChat() {
     return (
-      <main className="chat">
-        <header className="chat-header">
-          <h1>Chat com IA</h1>
-          <p>
-            Pergunte sobre tecnologias e encontre artigos relacionados.
-          </p>
-        </header>
+      <>
+        <ChatHistory
+          conversas={historico}
+          conversaAtivaId={conversaAtivaId}
+          aoNovaConversa={novaConversa}
+          aoSelecionarConversa={selecionarConversa}
+        />
 
-        <section className="messages" aria-live="polite">
-          {mensagens.map((mensagem) => (
-            <article
-              className={`message message--${mensagem.tipo}`}
-              key={mensagem.id}
-            >
-              <p>{mensagem.texto}</p>
-
-              {mensagem.artigos?.map((artigo) => (
-                <ArticleCard
-                  key={artigo.link}
-                  artigo={artigo}
-                />
-              ))}
-            </article>
-          ))}
-
-          {carregando && (
-            <p className="loading">
-              Buscando artigos...
+        <main className="chat">
+          <header className="chat-header">
+            <h1>Chat com IA</h1>
+            <p>
+              Pesquise tecnologias e encontre artigos
+              relacionados.
             </p>
-          )}
-        </section>
+          </header>
 
-        <div className="composer-area">
-          {mensagens.length === 1 && (
-            <div className="suggestions">
-              {sugestoes.map((item) => (
-                <button
-                  type="button"
-                  key={item}
-                  onClick={() => enviarPergunta(item)}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          )}
+          <MessageList
+            mensagens={mensagens}
+            carregando={
+              conversaCarregandoId === conversaAtivaId
+            }
+          />
 
-          <form
-            className="composer"
-            onSubmit={enviarFormulario}
-          >
-            <textarea
-              value={pergunta}
-              onChange={(evento) =>
-                setPergunta(evento.target.value)
-              }
-              onKeyDown={(evento) => {
-                if (
-                  evento.key === "Enter" &&
-                  !evento.shiftKey &&
-                  !evento.nativeEvent.isComposing
-                ) {
-                  evento.preventDefault();
-                  enviarPergunta();
-                }
-              }}
-              placeholder="Pergunte sobre uma tecnologia..."
-              aria-label="Digite sua pergunta"
-              rows={1}
-            />
+          <div className="composer-area">
+            {mensagens.length === 1 && (
+              <div className="suggestions">
+                {sugestoes.map((item) => (
+                  <button
+                    type="button"
+                    key={item}
+                    onClick={() => enviarPergunta(item)}
+                    disabled={carregando}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            )}
 
-            <button
-              type="submit"
-              disabled={!pergunta.trim() || carregando}
-              aria-label="Enviar pergunta"
+            <form
+              className="composer"
+              onSubmit={enviarFormulario}
             >
-              ↑
-            </button>
-          </form>
+              <textarea
+                value={pergunta}
+                onChange={(evento) =>
+                  setPergunta(evento.target.value)
+                }
+                onKeyDown={(evento) => {
+                  if (
+                    evento.key === "Enter" &&
+                    !evento.shiftKey &&
+                    !evento.nativeEvent.isComposing
+                  ) {
+                    evento.preventDefault();
+                    enviarPergunta();
+                  }
+                }}
+                placeholder="Pergunte sobre uma tecnologia..."
+                aria-label="Digite sua pergunta"
+                rows={1}
+              />
 
-          <small className="composer-hint">
-            Enter envia · Shift+Enter quebra a linha
-          </small>
-        </div>
-      </main>
+              <button
+                type="submit"
+                disabled={!pergunta.trim() || carregando}
+                aria-label="Enviar pergunta"
+              >
+                ↑
+              </button>
+            </form>
+
+            <small className="composer-hint">
+              Enter envia · Shift+Enter quebra a linha
+            </small>
+          </div>
+        </main>
+      </>
     );
   }
 
   function renderizarPagina() {
     const pagina = paginas[paginaAtual];
 
-    if (!pagina) {
-      return null;
-    }
+    if (!pagina) return null;
 
     return (
       <main className="chat">
@@ -264,7 +305,7 @@ export default function ChatPage() {
         <section className="messages">
           <p>
             Esta funcionalidade será implementada
-            na próxima etapa do projeto.
+            nas próximas etapas do projeto.
           </p>
         </section>
       </main>
@@ -278,14 +319,9 @@ export default function ChatPage() {
         aoNavegar={navegar}
       />
 
-      {paginaAtual === "chat" ? (
-        <>
-          {renderizarHistorico()}
-          {renderizarChat()}
-        </>
-      ) : (
-        renderizarPagina()
-      )}
+      {paginaAtual === "chat"
+        ? renderizarChat()
+        : renderizarPagina()}
     </div>
   );
 }
