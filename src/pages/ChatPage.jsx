@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import ChatHistory from "../components/ChatHistory";
 import MessageList from "../components/MessageList";
 import MessageInput from "../components/MessageInput";
+import FeedPage from "./FeedPage";
 import { consultarArtigos } from "../services/curadoriaApi";
 import "./ChatPage.css";
 
@@ -14,10 +15,6 @@ const sugestoes = [
 ];
 
 const paginas = {
-  feed: {
-    titulo: "Feed de Tecnologia",
-    descricao: "Acompanhe artigos e novidades da sua stack.",
-  },
   tendencias: {
     titulo: "Em Alta",
     descricao: "Explore as principais tendências tecnológicas.",
@@ -73,11 +70,14 @@ export default function ChatPage() {
 
   const mensagens = conversaAtiva?.mensagens ?? [];
   const carregando = conversaCarregandoId !== null;
-
   const historico = conversas.filter(temPergunta);
 
   function navegar(pagina) {
-    if (pagina === "chat" || paginas[pagina]) {
+    if (
+      pagina === "chat" ||
+      pagina === "feed" ||
+      paginas[pagina]
+    ) {
       setPaginaAtual(pagina);
     }
   }
@@ -106,7 +106,9 @@ export default function ChatPage() {
       (conversa) => conversa.id === id
     );
 
-    if (!existe) return;
+    if (!existe) {
+      return;
+    }
 
     setConversaAtivaId(id);
     setPergunta("");
@@ -259,9 +261,15 @@ export default function ChatPage() {
   }
 
   function renderizarPagina() {
+    if (paginaAtual === "feed") {
+      return <FeedPage />;
+    }
+
     const pagina = paginas[paginaAtual];
 
-    if (!pagina) return null;
+    if (!pagina) {
+      return null;
+    }
 
     return (
       <main className="chat">
@@ -280,8 +288,13 @@ export default function ChatPage() {
     );
   }
 
+  const classeLayout =
+    paginaAtual === "chat"
+      ? "chat-layout"
+      : "chat-layout chat-layout--page";
+
   return (
-    <div className="chat-layout">
+    <div className={classeLayout}>
       <Sidebar
         paginaAtual={paginaAtual}
         aoNavegar={navegar}

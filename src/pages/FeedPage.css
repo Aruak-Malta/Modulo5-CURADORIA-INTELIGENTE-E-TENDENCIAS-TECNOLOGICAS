@@ -1,0 +1,289 @@
+
+.feed-page {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+.feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 20px;
+  padding: 20px 30px;
+  border-bottom: 1px solid #e2e5ec;
+  background: #fff;
+}
+
+.feed-header h1 {
+  margin: 0 0 5px;
+  color: #1a1d29;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.feed-header p {
+  margin: 0;
+  color: #5b6275;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.feed-refresh {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border: 1px solid #1e2a5a;
+  border-radius: 8px;
+  background: #1e2a5a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.feed-refresh:hover:not(:disabled) {
+  background: #293972;
+}
+
+.feed-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.feed-content {
+  flex: 1;
+  min-height: 0;
+  padding: 28px 32px 40px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.feed-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.feed-toolbar h2 {
+  margin: 0 0 6px;
+  color: #1a1d29;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.feed-toolbar p {
+  margin: 0;
+  color: #777e90;
+  font-size: 13px;
+}
+
+.feed-updated {
+  color: #8b91a2;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.feed-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+
+.feed-filter {
+  padding: 9px 15px;
+  border: 1px solid #e2e5ec;
+  border-radius: 20px;
+  background: #fff;
+  color: #5b6275;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.feed-filter:hover {
+  border-color: #5145e5;
+  color: #5145e5;
+}
+
+.feed-filter--active,
+.feed-filter--active:hover {
+  border-color: #5145e5;
+  background: #eeedff;
+  color: #5145e5;
+}
+
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding-bottom: 20px;
+}
+
+.feed-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 175px;
+  gap: 20px;
+  padding: 22px;
+  border: 1px solid #e2e5ec;
+  border-radius: 12px;
+  background: #fff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.feed-card:hover {
+  border-color: #c5c9d8;
+  box-shadow: 0 5px 18px rgba(30, 42, 90, 0.07);
+  transform: translateY(-2px);
+}
+
+.feed-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.feed-source {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #eeedff;
+  color: #5145e5;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.feed-date {
+  color: #8b91a2;
+  font-size: 11px;
+}
+
+.feed-card h3 {
+  flex: 1;
+  margin: 0;
+  color: #1a1d29;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.feed-card-link {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  color: #5145e5;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.feed-card-link:hover {
+  color: #1e2a5a;
+  text-decoration: underline;
+}
+
+.feed-error {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.feed-empty {
+  padding: 50px 20px;
+  border: 1px dashed #e2e5ec;
+  border-radius: 12px;
+  background: #fafbfc;
+  color: #777e90;
+  font-size: 14px;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .feed-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 850px) {
+  .feed-header {
+    padding: 20px 24px;
+  }
+
+  .feed-content {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .feed-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .feed-header h1 {
+    font-size: 18px;
+  }
+
+  .feed-refresh {
+    width: 100%;
+  }
+
+  .feed-content {
+    padding: 20px 16px;
+  }
+
+  .feed-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .feed-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .feed-filter {
+    flex-shrink: 0;
+  }
+
+  .feed-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .feed-card {
+    min-height: 150px;
+    padding: 18px;
+  }
+
+  .feed-card h3 {
+    font-size: 15px;
+  }
+}
