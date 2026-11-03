@@ -17,7 +17,8 @@ const sugestoes = [
 const paginas = {
   tendencias: {
     titulo: "Em Alta",
-    descricao: "Explore as principais tendências tecnológicas.",
+    descricao:
+      "Explore as principais tendências tecnológicas.",
   },
 };
 
@@ -37,7 +38,7 @@ function criarConversa() {
     mensagens: [
       criarMensagem(
         "ia",
-        "Olá! Sou o assistente de curadoria. Sobre qual tecnologia você quer pesquisar?"
+        "Olá! Sou o assistente de curadoria. Sobre qual tecnologia você quer pesquisar?",
       ),
     ],
   };
@@ -45,27 +46,32 @@ function criarConversa() {
 
 function temPergunta(conversa) {
   return conversa.mensagens.some(
-    (mensagem) => mensagem.tipo === "usuario"
+    (mensagem) => mensagem.tipo === "usuario",
   );
 }
 
 export default function ChatPage() {
-  const [paginaAtual, setPaginaAtual] = useState("chat");
+  const [paginaAtual, setPaginaAtual] =
+    useState("chat");
+
+  const [repositorioAtivo, setRepositorioAtivo] =
+    useState("");
 
   const [conversas, setConversas] = useState(
-    () => [criarConversa()]
+    () => [criarConversa()],
   );
 
-  const [conversaAtivaId, setConversaAtivaId] = useState(
-    () => conversas[0].id
-  );
+  const [conversaAtivaId, setConversaAtivaId] =
+    useState(() => conversas[0].id);
 
   const [pergunta, setPergunta] = useState("");
-  const [conversaCarregandoId, setConversaCarregandoId] =
-    useState(null);
+  const [
+    conversaCarregandoId,
+    setConversaCarregandoId,
+  ] = useState(null);
 
   const conversaAtiva = conversas.find(
-    (conversa) => conversa.id === conversaAtivaId
+    (conversa) => conversa.id === conversaAtivaId,
   );
 
   const mensagens = conversaAtiva?.mensagens ?? [];
@@ -80,6 +86,15 @@ export default function ChatPage() {
     ) {
       setPaginaAtual(pagina);
     }
+  }
+
+  function conectarRepositorio(repositorio) {
+    setRepositorioAtivo(repositorio);
+    setPaginaAtual("feed");
+  }
+
+  function removerRepositorio() {
+    setRepositorioAtivo("");
   }
 
   function novaConversa() {
@@ -103,7 +118,7 @@ export default function ChatPage() {
 
   function selecionarConversa(id) {
     const existe = conversas.some(
-      (conversa) => conversa.id === id
+      (conversa) => conversa.id === id,
     );
 
     if (!existe) {
@@ -129,14 +144,18 @@ export default function ChatPage() {
             mensagem,
           ],
         };
-      })
+      }),
     );
   }
 
   async function enviarPergunta(texto = pergunta) {
     const perguntaEnviada = texto.trim();
 
-    if (!perguntaEnviada || carregando || !conversaAtiva) {
+    if (
+      !perguntaEnviada ||
+      carregando ||
+      !conversaAtiva
+    ) {
       return;
     }
 
@@ -147,7 +166,7 @@ export default function ChatPage() {
 
     const mensagemUsuario = criarMensagem(
       "usuario",
-      perguntaEnviada
+      perguntaEnviada,
     );
 
     setConversas((atuais) =>
@@ -156,7 +175,8 @@ export default function ChatPage() {
           return conversa;
         }
 
-        const primeiraPergunta = !temPergunta(conversa);
+        const primeiraPergunta =
+          !temPergunta(conversa);
 
         return {
           ...conversa,
@@ -168,13 +188,16 @@ export default function ChatPage() {
             mensagemUsuario,
           ],
         };
-      })
+      }),
     );
 
     setConversaCarregandoId(id);
 
     try {
-      const dados = await consultarArtigos(perguntaEnviada);
+      const dados = await consultarArtigos(
+        perguntaEnviada,
+      );
+
       const artigos = dados.artigos ?? [];
 
       adicionarMensagem(
@@ -184,18 +207,21 @@ export default function ChatPage() {
           artigos.length > 0
             ? `Encontrei ${artigos.length} artigo(s) relacionado(s):`
             : "Não encontrei artigos relacionados. Tente utilizar outros termos.",
-          { artigos }
-        )
+          { artigos },
+        ),
       );
     } catch (erro) {
-      console.error("Erro ao consultar API:", erro);
+      console.error(
+        "Erro ao consultar API:",
+        erro,
+      );
 
       adicionarMensagem(
         id,
         criarMensagem(
           "ia",
-          "Não consegui acessar a API de curadoria. Tente novamente."
-        )
+          "Não consegui acessar a API de curadoria. Tente novamente.",
+        ),
       );
     } finally {
       setConversaCarregandoId(null);
@@ -216,15 +242,16 @@ export default function ChatPage() {
           <header className="chat-header">
             <h1>Chat com IA</h1>
             <p>
-              Pesquise tecnologias e encontre artigos
-              relacionados.
+              Pesquise tecnologias e encontre
+              artigos relacionados.
             </p>
           </header>
 
           <MessageList
             mensagens={mensagens}
             carregando={
-              conversaCarregandoId === conversaAtivaId
+              conversaCarregandoId ===
+              conversaAtivaId
             }
           />
 
@@ -235,7 +262,9 @@ export default function ChatPage() {
                   <button
                     type="button"
                     key={item}
-                    onClick={() => enviarPergunta(item)}
+                    onClick={() =>
+                      enviarPergunta(item)
+                    }
                     disabled={carregando}
                   >
                     {item}
@@ -252,7 +281,8 @@ export default function ChatPage() {
             />
 
             <small className="composer-hint">
-              Enter envia · Shift+Enter quebra a linha
+              Enter envia · Shift+Enter quebra
+              a linha
             </small>
           </div>
         </main>
@@ -262,7 +292,11 @@ export default function ChatPage() {
 
   function renderizarPagina() {
     if (paginaAtual === "feed") {
-      return <FeedPage />;
+      return (
+        <FeedPage
+          repositorioAtivo={repositorioAtivo}
+        />
+      );
     }
 
     const pagina = paginas[paginaAtual];
@@ -298,6 +332,13 @@ export default function ChatPage() {
       <Sidebar
         paginaAtual={paginaAtual}
         aoNavegar={navegar}
+        repositorioAtivo={repositorioAtivo}
+        aoConectarRepositorio={
+          conectarRepositorio
+        }
+        aoRemoverRepositorio={
+          removerRepositorio
+        }
       />
 
       {paginaAtual === "chat"
