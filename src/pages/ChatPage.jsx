@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ChatHistory from "../components/ChatHistory";
 import MessageList from "../components/MessageList";
 import MessageInput from "../components/MessageInput";
 import FeedPage from "./FeedPage";
+import GitHubPage from "./GitHubPage";
 import { consultarArtigos } from "../services/curadoriaApi";
 import "./ChatPage.css";
 
@@ -57,6 +57,9 @@ export default function ChatPage() {
   const [repositorioAtivo, setRepositorioAtivo] =
     useState("");
 
+  const [stackDetectada, setStackDetectada] =
+    useState([]);
+
   const [conversas, setConversas] = useState(
     () => [criarConversa()],
   );
@@ -65,6 +68,7 @@ export default function ChatPage() {
     useState(() => conversas[0].id);
 
   const [pergunta, setPergunta] = useState("");
+
   const [
     conversaCarregandoId,
     setConversaCarregandoId,
@@ -82,19 +86,22 @@ export default function ChatPage() {
     if (
       pagina === "chat" ||
       pagina === "feed" ||
+      pagina === "github" ||
       paginas[pagina]
     ) {
       setPaginaAtual(pagina);
     }
   }
 
-  function conectarRepositorio(repositorio) {
-    setRepositorioAtivo(repositorio);
+  function conectarRepositorio(dados) {
+    setRepositorioAtivo(dados.repositorio);
+    setStackDetectada(dados.stack);
     setPaginaAtual("feed");
   }
 
   function removerRepositorio() {
     setRepositorioAtivo("");
+    setStackDetectada([]);
   }
 
   function novaConversa() {
@@ -299,6 +306,20 @@ export default function ChatPage() {
       );
     }
 
+    if (paginaAtual === "github") {
+      return (
+        <GitHubPage
+          repositorioAtivo={repositorioAtivo}
+          stackDetectada={stackDetectada}
+          aoConectar={conectarRepositorio}
+          aoRemover={removerRepositorio}
+          aoAbrirFeed={() =>
+            setPaginaAtual("feed")
+          }
+        />
+      );
+    }
+
     const pagina = paginas[paginaAtual];
 
     if (!pagina) {
@@ -333,12 +354,6 @@ export default function ChatPage() {
         paginaAtual={paginaAtual}
         aoNavegar={navegar}
         repositorioAtivo={repositorioAtivo}
-        aoConectarRepositorio={
-          conectarRepositorio
-        }
-        aoRemoverRepositorio={
-          removerRepositorio
-        }
       />
 
       {paginaAtual === "chat"
