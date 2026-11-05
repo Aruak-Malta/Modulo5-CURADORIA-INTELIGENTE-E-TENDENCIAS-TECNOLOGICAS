@@ -1,8 +1,10 @@
+
 import PropTypes from "prop-types";
 
 export default function Sidebar({
   paginaAtual = "chat",
   aoNavegar,
+  repositorioAtivo = "",
 }) {
   return (
     <aside className="sidebar">
@@ -21,7 +23,9 @@ export default function Sidebar({
         <button
           type="button"
           className={`nav-item ${
-            paginaAtual === "feed" ? "nav-item--active" : ""
+            paginaAtual === "feed"
+              ? "nav-item--active"
+              : ""
           }`}
           onClick={() => aoNavegar("feed")}
         >
@@ -31,7 +35,9 @@ export default function Sidebar({
         <button
           type="button"
           className={`nav-item ${
-            paginaAtual === "tendencias" ? "nav-item--active" : ""
+            paginaAtual === "tendencias"
+              ? "nav-item--active"
+              : ""
           }`}
           onClick={() => aoNavegar("tendencias")}
         >
@@ -45,11 +51,55 @@ export default function Sidebar({
         <button
           type="button"
           className={`nav-item ${
-            paginaAtual === "chat" ? "nav-item--active" : ""
+            paginaAtual === "chat"
+              ? "nav-item--active"
+              : ""
           }`}
           onClick={() => aoNavegar("chat")}
         >
           Chat
+        </button>
+
+        <p className="section-label">
+          INTEGRAÇÕES
+        </p>
+
+        <button
+          type="button"
+          className={`nav-item ${
+            paginaAtual === "github"
+              ? "nav-item--active"
+              : ""
+          }`}
+          onClick={() => aoNavegar("github")}
+        >
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "8px",
+            }}
+          >
+            <span>GitHub</span>
+
+            <span
+              title={
+                repositorioAtivo
+                  ? "Repositório conectado"
+                  : "Nenhum repositório conectado"
+              }
+              style={{
+                width: "8px",
+                height: "8px",
+                flexShrink: 0,
+                borderRadius: "50%",
+                background: repositorioAtivo
+                  ? "#16a34a"
+                  : "#a0a5b5",
+              }}
+            />
+          </span>
         </button>
       </nav>
 
@@ -64,5 +114,5 @@ export default function Sidebar({
 Sidebar.propTypes = {
   paginaAtual: PropTypes.string,
   aoNavegar: PropTypes.func.isRequired,
+  repositorioAtivo: PropTypes.string,
 };
-
