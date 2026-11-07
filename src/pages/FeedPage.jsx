@@ -1,4 +1,5 @@
 
+import PropTypes from "prop-types";
 import { useEffect, useMemo, useState } from "react";
 import {
   buscarCategorias,
@@ -16,8 +17,14 @@ const CATEGORIAS_PADRAO = [
     id: "desenvolvimento",
     nome: "Desenvolvimento de Software",
   },
-  { id: "seguranca", nome: "Segurança" },
-  { id: "devops", nome: "DevOps e Infraestrutura" },
+  {
+    id: "seguranca",
+    nome: "Segurança",
+  },
+  {
+    id: "devops",
+    nome: "DevOps e Infraestrutura",
+  },
   {
     id: "computacao-quantica",
     nome: "Computação Quântica",
@@ -42,31 +49,54 @@ function formatarData(valor) {
   }).format(data);
 }
 
-function validarRepositorio(valor) {
-  return /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(valor);
+function normalizarRepositorio(valor) {
+  return valor
+    .trim()
+    .replace(/^https?:\/\/github\.com\//i, "")
+    .replace(/\/+$/, "");
 }
 
-export default function FeedPage() {
+function validarRepositorio(valor) {
+  return /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(
+    valor,
+  );
+}
+
+export default function FeedPage({
+  repositorioAtivo: repositorioExterno = "",
+}) {
   const [categorias, setCategorias] = useState(
     CATEGORIAS_PADRAO,
   );
+
   const [categoria, setCategoria] = useState("geral");
+
   const [repositorioDigitado, setRepositorioDigitado] =
-    useState("");
+    useState(repositorioExterno);
+
   const [repositorioAtivo, setRepositorioAtivo] =
-    useState("");
+    useState(repositorioExterno);
+
   const [artigos, setArtigos] = useState([]);
   const [stackDetectada, setStackDetectada] = useState([]);
   const [fontesIndisponiveis, setFontesIndisponiveis] =
     useState([]);
+
   const [idioma, setIdioma] = useState("todos");
   const [fonte, setFonte] = useState("Todas");
+
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [erroRepositorio, setErroRepositorio] =
     useState("");
+
   const [atualizadoEm, setAtualizadoEm] = useState(null);
   const [revisao, setRevisao] = useState(0);
+
+  useEffect(() => {
+    setRepositorioAtivo(repositorioExterno);
+    setRepositorioDigitado(repositorioExterno);
+  }, [repositorioExterno]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -113,11 +143,12 @@ export default function FeedPage() {
           return;
         }
 
-        setArtigos(dados.artigos);
-        setStackDetectada(dados.stackDetectada);
+        setArtigos(dados.artigos ?? []);
+        setStackDetectada(dados.stackDetectada ?? []);
         setFontesIndisponiveis(
-          dados.fontesIndisponiveis,
+          dados.fontesIndisponiveis ?? [],
         );
+
         setAtualizadoEm(new Date());
       } catch (error) {
         if (controller.signal.aborted) {
@@ -126,6 +157,8 @@ export default function FeedPage() {
 
         setArtigos([]);
         setStackDetectada([]);
+        setFontesIndisponiveis([]);
+
         setErro(
           error.message ||
             "Não foi possível carregar as publicações.",
@@ -143,13 +176,12 @@ export default function FeedPage() {
   }, [categoria, repositorioAtivo, revisao]);
 
   const fontes = useMemo(
-    () =>
-      [
-        "Todas",
-        ...new Set(
-          artigos.map((artigo) => artigo.fonte),
-        ),
-      ],
+    () => [
+      "Todas",
+      ...new Set(
+        artigos.map((artigo) => artigo.fonte),
+      ),
+    ],
     [artigos],
   );
 
@@ -184,10 +216,9 @@ export default function FeedPage() {
   function conectarRepositorio(evento) {
     evento.preventDefault();
 
-    const valor = repositorioDigitado
-      .trim()
-      .replace(/^https?:\/\/github\.com\//i, "")
-      .replace(/\/+$/, "");
+    const valor = normalizarRepositorio(
+      repositorioDigitado,
+    );
 
     if (!validarRepositorio(valor)) {
       setErroRepositorio(
@@ -199,6 +230,9 @@ export default function FeedPage() {
     setErroRepositorio("");
     setRepositorioDigitado(valor);
     setRepositorioAtivo(valor);
+    setFonte("Todas");
+    setIdioma("todos");
+
     setRevisao((atual) => atual + 1);
   }
 
@@ -207,6 +241,8 @@ export default function FeedPage() {
     setRepositorioAtivo("");
     setStackDetectada([]);
     setErroRepositorio("");
+    setFonte("Todas");
+    setIdioma("todos");
   }
 
   function atualizar() {
@@ -218,6 +254,7 @@ export default function FeedPage() {
       <header className="feed-header">
         <div>
           <h1>Feed de Tecnologia</h1>
+
           <p>
             Notícias em português e inglês, organizadas
             por tema e personalizadas pela stack GitHub.
@@ -230,7 +267,9 @@ export default function FeedPage() {
           onClick={atualizar}
           disabled={carregando}
         >
-          {carregando ? "Atualizando..." : "Atualizar feed"}
+          {carregando
+            ? "Atualizando..."
+            : "Atualizar feed"}
         </button>
       </header>
 
@@ -239,10 +278,11 @@ export default function FeedPage() {
           <div className="feed-github-heading">
             <div>
               <h2>Seu repositório GitHub</h2>
+
               <p>
-                Informe um repositório público para receber
-                recomendações relacionadas às tecnologias
-                utilizadas no projeto.
+                Informe um repositório público para
+                receber recomendações relacionadas às
+                tecnologias utilizadas no projeto.
               </p>
             </div>
 
@@ -270,7 +310,10 @@ export default function FeedPage() {
               spellCheck={false}
             />
 
-            <button type="submit" disabled={carregando}>
+            <button
+              type="submit"
+              disabled={carregando}
+            >
               Aplicar repositório
             </button>
 
@@ -286,7 +329,10 @@ export default function FeedPage() {
           </form>
 
           {erroRepositorio && (
-            <p className="feed-github-error" role="alert">
+            <p
+              className="feed-github-error"
+              role="alert"
+            >
               {erroRepositorio}
             </p>
           )}
@@ -344,9 +390,7 @@ export default function FeedPage() {
                 onClick={() =>
                   selecionarCategoria(item.id)
                 }
-                aria-pressed={
-                  categoria === item.id
-                }
+                aria-pressed={categoria === item.id}
               >
                 {item.nome}
               </button>
@@ -357,6 +401,7 @@ export default function FeedPage() {
         <section className="feed-toolbar">
           <div>
             <h2>{nomeCategoria}</h2>
+
             <p>
               Até {limite} recomendações
               {repositorioAtivo
@@ -385,6 +430,7 @@ export default function FeedPage() {
             <label htmlFor="feed-idioma">
               Idioma
             </label>
+
             <select
               id="feed-idioma"
               value={idioma}
@@ -395,8 +441,14 @@ export default function FeedPage() {
               <option value="todos">
                 Português e inglês
               </option>
-              <option value="pt">Português</option>
-              <option value="en">Inglês</option>
+
+              <option value="pt">
+                Português
+              </option>
+
+              <option value="en">
+                Inglês
+              </option>
             </select>
           </div>
 
@@ -404,6 +456,7 @@ export default function FeedPage() {
             <label htmlFor="feed-fonte">
               Fonte
             </label>
+
             <select
               id="feed-fonte"
               value={
@@ -416,7 +469,10 @@ export default function FeedPage() {
               }
             >
               {fontes.map((item) => (
-                <option key={item} value={item}>
+                <option
+                  key={item}
+                  value={item}
+                >
                   {item}
                 </option>
               ))}
@@ -430,7 +486,10 @@ export default function FeedPage() {
         </div>
 
         {erro && (
-          <div className="feed-error" role="alert">
+          <div
+            className="feed-error"
+            role="alert"
+          >
             {erro}
           </div>
         )}
@@ -451,7 +510,8 @@ export default function FeedPage() {
             Buscando publicações e analisando
             recomendações...
           </div>
-        ) : !erro && artigosFiltrados.length === 0 ? (
+        ) : !erro &&
+          artigosFiltrados.length === 0 ? (
           <div className="feed-empty">
             Nenhuma publicação disponível para
             os filtros selecionados.
@@ -504,3 +564,7 @@ export default function FeedPage() {
     </main>
   );
 }
+
+FeedPage.propTypes = {
+  repositorioAtivo: PropTypes.string,
+};
