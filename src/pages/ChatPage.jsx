@@ -7,6 +7,7 @@ import MessageInput from "../components/MessageInput";
 import FeedPage from "./FeedPage";
 import GitHubPage from "./GitHubPage";
 import AlertasPage from "./AlertasPage";
+import EmAltaPage from "./EmAltaPage";
 import { consultarArtigos } from "../services/curadoriaApi";
 import "./ChatPage.css";
 import "./Mobile.css";
@@ -16,13 +17,6 @@ const sugestoes = [
   "Tendências em desenvolvimento de software",
   "Novidades sobre inteligência artificial",
 ];
-
-const paginas = {
-  tendencias: {
-    titulo: "Em Alta",
-    descricao: "Explore as principais tendências tecnológicas.",
-  },
-};
 
 function criarMensagem(tipo, texto, adicionais = {}) {
   return {
@@ -53,7 +47,7 @@ function temPergunta(conversa) {
 }
 
 export default function ChatPage() {
-  const [paginaAtual, setPaginaAtual] = useState("chat");
+  const [paginaAtual, setPaginaAtual] = useState("feed");
   const [repositorioAtivo, setRepositorioAtivo] = useState("");
   const [stackDetectada, setStackDetectada] = useState([]);
 
@@ -66,10 +60,8 @@ export default function ChatPage() {
   );
 
   const [pergunta, setPergunta] = useState("");
-
   const [conversaCarregandoId, setConversaCarregandoId] =
     useState(null);
-
   const [menuMobile, setMenuMobile] = useState(null);
 
   const conversaAtiva = conversas.find(
@@ -99,8 +91,14 @@ export default function ChatPage() {
     window.addEventListener("resize", fecharAoAmpliar);
 
     return () => {
-      document.removeEventListener("keydown", fecharComEscape);
-      window.removeEventListener("resize", fecharAoAmpliar);
+      document.removeEventListener(
+        "keydown",
+        fecharComEscape,
+      );
+      window.removeEventListener(
+        "resize",
+        fecharAoAmpliar,
+      );
     };
   }, [menuMobile]);
 
@@ -115,16 +113,18 @@ export default function ChatPage() {
   }
 
   function navegar(pagina) {
-    if (
-      pagina === "chat" ||
-      pagina === "feed" ||
-      pagina === "github" ||
-      pagina === "alertas" ||
-      paginas[pagina]
-    ) {
-      setPaginaAtual(pagina);
-      fecharMenu();
-    }
+    const paginasValidas = [
+      "chat",
+      "feed",
+      "github",
+      "alertas",
+      "tendencias",
+    ];
+
+    if (!paginasValidas.includes(pagina)) return;
+
+    setPaginaAtual(pagina);
+    fecharMenu();
   }
 
   function conectarRepositorio(dados) {
@@ -140,7 +140,10 @@ export default function ChatPage() {
   }
 
   function novaConversa() {
-    if (conversaAtiva && !temPergunta(conversaAtiva)) {
+    if (
+      conversaAtiva &&
+      !temPergunta(conversaAtiva)
+    ) {
       setPergunta("");
       setPaginaAtual("chat");
       fecharMenu();
@@ -182,7 +185,10 @@ export default function ChatPage() {
 
         return {
           ...conversa,
-          mensagens: [...conversa.mensagens, mensagem],
+          mensagens: [
+            ...conversa.mensagens,
+            mensagem,
+          ],
         };
       }),
     );
@@ -191,7 +197,11 @@ export default function ChatPage() {
   async function enviarPergunta(texto = pergunta) {
     const perguntaEnviada = texto.trim();
 
-    if (!perguntaEnviada || carregando || !conversaAtiva) {
+    if (
+      !perguntaEnviada ||
+      carregando ||
+      !conversaAtiva
+    ) {
       return;
     }
 
@@ -212,7 +222,8 @@ export default function ChatPage() {
           return conversa;
         }
 
-        const primeiraPergunta = !temPergunta(conversa);
+        const primeiraPergunta =
+          !temPergunta(conversa);
 
         return {
           ...conversa,
@@ -230,7 +241,10 @@ export default function ChatPage() {
     setConversaCarregandoId(id);
 
     try {
-      const dados = await consultarArtigos(perguntaEnviada);
+      const dados = await consultarArtigos(
+        perguntaEnviada,
+      );
+
       const artigos = dados.artigos ?? [];
 
       adicionarMensagem(
@@ -244,7 +258,10 @@ export default function ChatPage() {
         ),
       );
     } catch (erro) {
-      console.error("Erro ao consultar API:", erro);
+      console.error(
+        "Erro ao consultar API:",
+        erro,
+      );
 
       adicionarMensagem(
         id,
@@ -291,7 +308,9 @@ export default function ChatPage() {
                   <button
                     type="button"
                     key={item}
-                    onClick={() => enviarPergunta(item)}
+                    onClick={() =>
+                      enviarPergunta(item)
+                    }
                     disabled={carregando}
                   >
                     {item}
@@ -319,8 +338,14 @@ export default function ChatPage() {
   function renderizarPagina() {
     if (paginaAtual === "feed") {
       return (
-        <FeedPage repositorioAtivo={repositorioAtivo} />
+        <FeedPage
+          repositorioAtivo={repositorioAtivo}
+        />
       );
+    }
+
+    if (paginaAtual === "tendencias") {
+      return <EmAltaPage />;
     }
 
     if (paginaAtual === "github") {
@@ -343,25 +368,7 @@ export default function ChatPage() {
       );
     }
 
-    const pagina = paginas[paginaAtual];
-
-    if (!pagina) return null;
-
-    return (
-      <main className="chat">
-        <header className="chat-header">
-          <h1>{pagina.titulo}</h1>
-          <p>{pagina.descricao}</p>
-        </header>
-
-        <section className="messages">
-          <p>
-            Esta funcionalidade será implementada nas
-            próximas etapas do projeto.
-          </p>
-        </section>
-      </main>
-    );
+    return null;
   }
 
   const classeLayout =
@@ -381,16 +388,22 @@ export default function ChatPage() {
         <button
           type="button"
           className="mobile-icon-button"
-          onClick={() => alternarMenu("navegacao")}
+          onClick={() =>
+            alternarMenu("navegacao")
+          }
           aria-label="Abrir menu de navegação"
-          aria-expanded={menuMobile === "navegacao"}
+          aria-expanded={
+            menuMobile === "navegacao"
+          }
           aria-controls="mobile-navigation"
         >
           <span aria-hidden="true">☰</span>
         </button>
 
         <div className="mobile-brand">
-          <span className="mobile-brand-icon">✦</span>
+          <span className="mobile-brand-icon">
+            ✦
+          </span>
           <span>Curadoria IA</span>
         </div>
 
@@ -398,9 +411,13 @@ export default function ChatPage() {
           <button
             type="button"
             className="mobile-icon-button"
-            onClick={() => alternarMenu("historico")}
+            onClick={() =>
+              alternarMenu("historico")
+            }
             aria-label="Abrir histórico de conversas"
-            aria-expanded={menuMobile === "historico"}
+            aria-expanded={
+              menuMobile === "historico"
+            }
             aria-controls="mobile-history"
           >
             <span aria-hidden="true">☷</span>
