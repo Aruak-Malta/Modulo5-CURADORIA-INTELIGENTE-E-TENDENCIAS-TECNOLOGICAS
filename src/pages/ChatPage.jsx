@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ChatHistory from "../components/ChatHistory";
@@ -5,6 +6,7 @@ import MessageList from "../components/MessageList";
 import MessageInput from "../components/MessageInput";
 import FeedPage from "./FeedPage";
 import GitHubPage from "./GitHubPage";
+import AlertasPage from "./AlertasPage";
 import { consultarArtigos } from "../services/curadoriaApi";
 import "./ChatPage.css";
 import "./Mobile.css";
@@ -117,6 +119,7 @@ export default function ChatPage() {
       pagina === "chat" ||
       pagina === "feed" ||
       pagina === "github" ||
+      pagina === "alertas" ||
       paginas[pagina]
     ) {
       setPaginaAtual(pagina);
@@ -126,7 +129,7 @@ export default function ChatPage() {
 
   function conectarRepositorio(dados) {
     setRepositorioAtivo(dados.repositorio);
-    setStackDetectada(dados.stack);
+    setStackDetectada(dados.stack ?? []);
     setPaginaAtual("feed");
     fecharMenu();
   }
@@ -328,6 +331,14 @@ export default function ChatPage() {
           aoConectar={conectarRepositorio}
           aoRemover={removerRepositorio}
           aoAbrirFeed={() => navegar("feed")}
+        />
+      );
+    }
+
+    if (paginaAtual === "alertas") {
+      return (
+        <AlertasPage
+          repositorioAtivo={repositorioAtivo}
         />
       );
     }
