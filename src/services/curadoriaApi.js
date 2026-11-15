@@ -1,19 +1,59 @@
-const API_URL =
-  import.meta.env?.VITE_API_URL ||
-  "https://agente-tendencias-tecnologicas-fyd3bzerc9a2cqcu.chilecentral-01.azurewebsites.net/consultas";
+import { apiRequest } from "./apiClient.js";
 
-export async function consultarArtigos(pergunta) {
-  const resposta = await fetch(API_URL, {
+export function consultarArtigos(pergunta, { chatId, projectId } = {}) {
+  return apiRequest("/consultas", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+    json: {
+      pergunta,
+      ...(chatId ? { chat_id: chatId } : {}),
+      ...(projectId ? { project_id: projectId } : {}),
     },
-    body: JSON.stringify({ pergunta }),
   });
+}
 
-  if (!resposta.ok) {
-    throw new Error(`A API respondeu com erro ${resposta.status}`);
-  }
+export function perguntarAoAssistente(
+  pergunta,
+  { chatId, projectId } = {},
+) {
+  return apiRequest("/assistente", {
+    method: "POST",
+    json: {
+      pergunta,
+      ...(chatId ? { chat_id: chatId } : {}),
+      ...(projectId ? { project_id: projectId } : {}),
+    },
+  });
+}
 
-  return resposta.json();
+export function listarConversas(projectId) {
+  const parametros = new URLSearchParams();
+  if (projectId) parametros.set("project_id", projectId);
+  const query = parametros.toString();
+  return apiRequest(`/conversas${query ? `?${query}` : ""}`);
+}
+
+export function obterConversa(chatId) {
+  return apiRequest(`/conversas/${encodeURIComponent(chatId)}`);
+}
+
+export function salvarRepositorioProjeto(projectId, repositorio) {
+  return apiRequest(
+    `/projetos/${encodeURIComponent(projectId)}/repositorios`,
+    {
+      method: "POST",
+      json: { repositorio },
+    },
+  );
+}
+
+export function listarRepositoriosProjeto(projectId) {
+  return apiRequest(
+    `/projetos/${encodeURIComponent(projectId)}/repositorios`,
+  );
+}
+
+export function listarRecomendacoesProjeto(projectId) {
+  return apiRequest(
+    `/projetos/${encodeURIComponent(projectId)}/recomendacoes`,
+  );
 }

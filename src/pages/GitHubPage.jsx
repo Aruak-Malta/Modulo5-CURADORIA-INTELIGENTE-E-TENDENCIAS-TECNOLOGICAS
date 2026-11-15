@@ -1,8 +1,15 @@
 
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { detectarStack } from "../services/feedApi";
+import {
+  listarRecomendacoesProjeto,
+  listarRepositoriosProjeto,
+  salvarRepositorioProjeto,
+} from "../services/curadoriaApi";
 import "./GitHubPage.css";
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function normalizarRepositorio(valor) {
   return valor
@@ -26,8 +33,57 @@ export default function GitHubPage({
 }) {
   const [repositorioDigitado, setRepositorioDigitado] =
     useState(repositorioAtivo || "");
+  const [projectId, setProjectId] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
+  const [recomendacoes, setRecomendacoes] = useState([]);
+
+  async function carregarIntegracao() {
+    if (!UUID_PATTERN.test(projectId.trim())) {
+      setErro("Informe o UUID de um projeto ao qual sua conta tenha acesso.");
+      return;
+    }
+
+    setErro("");
+    setCarregando(true);
+    try {
+      const [dadosRepositorios, dadosRecomendacoes] = await Promise.all([
+        listarRepositoriosProjeto(projectId.trim()),
+        listarRecomendacoesProjeto(projectId.trim()),
+      ]);
+      const repositorioSalvo = dadosRepositorios.repositorios?.[0];
+      if (!repositorioSalvo) {
+        setErro("Não há repositório salvo para este projeto.");
+        return;
+      }
+
+      const repositorio = normalizarRepositorio(
+        repositorioSalvo.repositorio,
+      );
+      setRepositorioDigitado(repositorio);
+      aoConectar({
+        repositorio,
+        stack: repositorioSalvo.stack_detectada ?? [],
+      });
+
+      const grupos = new Map();
+      for (const artigo of dadosRecomendacoes.recomendacoes ?? []) {
+        const grupo = grupos.get(artigo.tecnologia) ?? [];
+        grupo.push(artigo);
+        grupos.set(artigo.tecnologia, grupo);
+      }
+      setRecomendacoes(
+        [...grupos].map(([tecnologia, artigos]) => ({
+          tecnologia,
+          artigos,
+        })),
+      );
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setCarregando(false);
+    }
+  }
 
   async function conectar(evento) {
     evento.preventDefault();
@@ -43,14 +99,21 @@ export default function GitHubPage({
       return;
     }
 
+    if (!UUID_PATTERN.test(projectId.trim())) {
+      setErro("Informe o UUID de um projeto ao qual sua conta tenha acesso.");
+      return;
+    }
+
     setErro("");
     setCarregando(true);
 
     try {
-      const resultado = await detectarStack(
+      const resultado = await salvarRepositorioProjeto(
+        projectId.trim(),
         repositorio,
       );
 
+      setRecomendacoes(resultado.recomendacoes ?? []);
       aoConectar({
         repositorio: resultado.repositorio,
         stack: resultado.stackDetectada,
@@ -129,14 +192,39 @@ export default function GitHubPage({
               disabled={carregando}
             />
 
+            <label htmlFor="github-project-id">
+              UUID do projeto no Módulo 1
+            </label>
+            <input
+              id="github-project-id"
+              type="text"
+              value={projectId}
+              onChange={(evento) =>
+                setProjectId(evento.target.value)
+              }
+              placeholder="00000000-0000-0000-0000-000000000000"
+              autoComplete="off"
+              spellCheck={false}
+              disabled={carregando}
+            />
+
             <button
               type="submit"
               className="github-primary-button"
               disabled={carregando}
             >
               {carregando
-                ? "Analisando repositório..."
-                : "Conectar repositório"}
+                ? "Salvando integração..."
+                : "Salvar no projeto"}
+            </button>
+
+            <button
+              type="button"
+              className="github-secondary-button"
+              onClick={carregarIntegracao}
+              disabled={carregando}
+            >
+              Carregar integração salva
             </button>
           </form>
 
@@ -150,8 +238,9 @@ export default function GitHubPage({
           )}
 
           <p className="github-help">
-            O repositório precisa ser público.
-            Nenhuma senha ou token GitHub é necessário.
+            A API verifica seu acesso ao projeto e salva o repositório,
+            a stack e as recomendações no PostgreSQL. O repositório precisa
+            ser público; nenhuma senha ou token GitHub é necessário.
           </p>
         </section>
 
@@ -193,6 +282,30 @@ export default function GitHubPage({
               </p>
             )}
 
+            {recomendacoes.length > 0 && (
+              <div className="github-recommendations">
+                <h3>Recomendações salvas</h3>
+                {recomendacoes.map((grupo) => (
+                  <section key={grupo.tecnologia}>
+                    <strong>{grupo.tecnologia}</strong>
+                    <ul>
+                      {grupo.artigos.map((artigo) => (
+                        <li key={artigo.link}>
+                          <a
+                            href={artigo.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {artigo.titulo}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            )}
+
             <div className="github-actions">
               <button
                 type="button"
@@ -207,9 +320,12 @@ export default function GitHubPage({
                 className="github-secondary-button"
                 onClick={remover}
               >
-                Desconectar repositório
+                Limpar seleção desta sessão
               </button>
             </div>
+            <p className="github-help">
+              Limpar a seleção não apaga o vínculo persistido no projeto.
+            </p>
           </section>
         )}
 
