@@ -6,6 +6,55 @@
   font-synthesis: none;
 }
 
+.sidebar-account {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 28px 4px 8px;
+  padding: 12px 8px;
+  border-top: 1px solid #e2e5ec;
+}
+
+.sidebar-account__identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-account__identity strong,
+.sidebar-account__identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-account__identity strong {
+  color: #303548;
+  font-size: 11px;
+}
+
+.sidebar-account__identity span {
+  color: #777e90;
+  font-size: 10px;
+}
+
+.sidebar-account button {
+  flex-shrink: 0;
+  padding: 6px 8px;
+  border: 1px solid #dce0e9;
+  border-radius: 6px;
+  background: #fff;
+  color: #5b6275;
+  font-size: 11px;
+}
+
+.sidebar-account button:hover {
+  border-color: #1e2a5a;
+  color: #1e2a5a;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -225,6 +274,56 @@ button {
   font-size: 13px;
 }
 
+.project-scope {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.project-scope label {
+  color: #5b6275;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.project-scope input {
+  flex: 1;
+  min-width: 220px;
+  max-width: 440px;
+  padding: 8px 10px;
+  border: 1px solid #dce0e9;
+  border-radius: 7px;
+  outline: 0;
+  font: inherit;
+  font-size: 12px;
+}
+
+.project-scope input:focus {
+  border-color: #1e2a5a;
+}
+
+.project-scope button {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: #1e2a5a;
+  color: #fff;
+  font-size: 12px;
+}
+
+.project-scope button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.chat-error {
+  margin-top: 10px !important;
+  color: #b91c1c !important;
+  font-size: 12px !important;
+}
+
 .messages {
   display: flex;
   flex: 1;
@@ -302,6 +401,34 @@ button {
   flex-shrink: 0;
   color: #5b6275;
   font-size: 13px;
+}
+
+.message-sources {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #e2e5ec;
+  border-radius: 8px;
+  background: #fafbff;
+  color: #303548;
+  font-size: 12px;
+}
+
+.message-sources ul {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.message-sources li {
+  overflow-wrap: anywhere;
+}
+
+.message-sources li p {
+  margin: 4px 0 0;
+  color: #6c7284;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .composer-area {

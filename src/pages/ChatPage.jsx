@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ChatHistory from "../components/ChatHistory";
@@ -8,7 +7,12 @@ import FeedPage from "./FeedPage";
 import GitHubPage from "./GitHubPage";
 import AlertasPage from "./AlertasPage";
 import EmAltaPage from "./EmAltaPage";
-import { consultarArtigos } from "../services/curadoriaApi";
+import {
+  consultarArtigos,
+  listarConversas,
+  obterConversa,
+  perguntarAoAssistente,
+} from "../services/curadoriaApi";
 import "./ChatPage.css";
 import "./Mobile.css";
 
@@ -17,6 +21,9 @@ const sugestoes = [
   "Tendências em desenvolvimento de software",
   "Novidades sobre inteligência artificial",
 ];
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function criarMensagem(tipo, texto, adicionais = {}) {
   return {
@@ -27,9 +34,11 @@ function criarMensagem(tipo, texto, adicionais = {}) {
   };
 }
 
-function criarConversa() {
+function criarConversa(projectId = "") {
   return {
-    id: crypto.randomUUID(),
+    id: `novo-${crypto.randomUUID()}`,
+    chat_id: null,
+    project_id: projectId || null,
     titulo: "Nova conversa",
     mensagens: [
       criarMensagem(
@@ -45,67 +54,150 @@ function temPergunta(conversa) {
     (mensagem) => mensagem.tipo === "usuario",
   );
 }
+function converterConversa(conversa) {
+  return {
+    id: String(conversa.chat_id),
+    chat_id: conversa.chat_id,
+    project_id: conversa.project_id,
+    titulo: conversa.titulo,
+    mensagens: [],
+  };
+}
 
-export default function ChatPage() {
+function converterHistorico(conversa) {
+  const mensagens = [];
+  let perguntaAtual = null;
+  let tiposDeResposta = new Set();
+
+  for (const item of conversa.mensagens ?? []) {
+    const resposta = item.resposta;
+    const tipoResposta = Array.isArray(resposta)
+      ? "artigos"
+      : resposta && typeof resposta === "object"
+        ? "assistente"
+        : "texto";
+
+    if (
+      item.pergunta !== perguntaAtual ||
+      tiposDeResposta.has(tipoResposta)
+    ) {
+      mensagens.push(criarMensagem("usuario", item.pergunta));
+      perguntaAtual = item.pergunta;
+      tiposDeResposta = new Set();
+    }
+
+    tiposDeResposta.add(tipoResposta);
+
+    if (Array.isArray(resposta)) {
+      mensagens.push(
+        criarMensagem(
+          "ia",
+          resposta.length
+            ? `Encontrei ${resposta.length} artigo(s) relacionado(s):`
+            : "Não encontrei artigos relacionados. Tente utilizar outros termos.",
+          { artigos: resposta },
+        ),
+      );
+    } else if (resposta && typeof resposta === "object") {
+      mensagens.push(
+        criarMensagem(
+          "ia",
+          typeof resposta.content === "string"
+            ? resposta.content
+            : "O assistente não retornou uma resposta textual.",
+          {
+            sources: Array.isArray(resposta.sources)
+              ? resposta.sources
+              : [],
+          },
+        ),
+      );
+    } else if (typeof resposta === "string" && resposta) {
+      mensagens.push(criarMensagem("ia", resposta));
+    }
+  }
+
+  return mensagens;
+}
+
+export default function ChatPage({ usuario, aoSair }) {
+  const conversaInicial = criarConversa();
   const [paginaAtual, setPaginaAtual] = useState("feed");
   const [repositorioAtivo, setRepositorioAtivo] = useState("");
   const [stackDetectada, setStackDetectada] = useState([]);
-
-  const [conversas, setConversas] = useState(
-    () => [criarConversa()],
-  );
-
+  const [conversas, setConversas] = useState([conversaInicial]);
   const [conversaAtivaId, setConversaAtivaId] = useState(
-    () => conversas[0].id,
+    conversaInicial.id,
   );
-
+  const [projectId, setProjectId] = useState("");
+  const [projectIdDigitado, setProjectIdDigitado] = useState("");
   const [pergunta, setPergunta] = useState("");
   const [conversaCarregandoId, setConversaCarregandoId] =
     useState(null);
   const [menuMobile, setMenuMobile] = useState(null);
+  const [erroOperacao, setErroOperacao] = useState("");
 
   const conversaAtiva = conversas.find(
     (conversa) => conversa.id === conversaAtivaId,
   );
-
   const mensagens = conversaAtiva?.mensagens ?? [];
   const carregando = conversaCarregandoId !== null;
-  const historico = conversas.filter(temPergunta);
+  const historico = conversas.filter(
+    (conversa) => conversa.chat_id || temPergunta(conversa),
+  );
 
   useEffect(() => {
-    if (!menuMobile) return;
+    let ativo = true;
+
+    listarConversas()
+      .then((dados) => {
+        if (!ativo) return;
+        const doServidor = (dados.conversas ?? []).map(
+          converterConversa,
+        );
+        setConversas((atuais) => {
+          const idsDoServidor = new Set(
+            doServidor.map((conversa) => conversa.id),
+          );
+          const locais = atuais.filter(
+            (conversa) =>
+              !conversa.chat_id ||
+              !idsDoServidor.has(conversa.id),
+          );
+          return [...locais, ...doServidor];
+        });
+      })
+      .catch((error) => {
+        if (ativo) setErroOperacao(error.message);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!menuMobile) return undefined;
 
     function fecharComEscape(evento) {
-      if (evento.key === "Escape") {
-        setMenuMobile(null);
-      }
+      if (evento.key === "Escape") setMenuMobile(null);
     }
 
     function fecharAoAmpliar() {
-      if (window.innerWidth > 850) {
-        setMenuMobile(null);
-      }
+      if (window.innerWidth > 850) setMenuMobile(null);
     }
 
     document.addEventListener("keydown", fecharComEscape);
     window.addEventListener("resize", fecharAoAmpliar);
 
     return () => {
-      document.removeEventListener(
-        "keydown",
-        fecharComEscape,
-      );
-      window.removeEventListener(
-        "resize",
-        fecharAoAmpliar,
-      );
+      document.removeEventListener("keydown", fecharComEscape);
+      window.removeEventListener("resize", fecharAoAmpliar);
     };
   }, [menuMobile]);
 
   function alternarMenu(tipo) {
-    setMenuMobile((atual) =>
-      atual === tipo ? null : tipo,
-    );
+    setMenuMobile((atual) => (atual === tipo ? null : tipo));
   }
 
   function fecharMenu() {
@@ -122,7 +214,6 @@ export default function ChatPage() {
     ];
 
     if (!paginasValidas.includes(pagina)) return;
-
     setPaginaAtual(pagina);
     fecharMenu();
   }
@@ -130,7 +221,6 @@ export default function ChatPage() {
   function conectarRepositorio(dados) {
     setRepositorioAtivo(dados.repositorio);
     setStackDetectada(dados.stack ?? []);
-    setPaginaAtual("feed");
     fecharMenu();
   }
 
@@ -140,136 +230,216 @@ export default function ChatPage() {
   }
 
   function novaConversa() {
-    if (
-      conversaAtiva &&
-      !temPergunta(conversaAtiva)
-    ) {
-      setPergunta("");
-      setPaginaAtual("chat");
-      fecharMenu();
-      return;
-    }
-
-    const conversa = criarConversa();
-
+    const conversa = criarConversa(projectId);
     setConversas((atuais) => [
       conversa,
-      ...atuais.filter(temPergunta),
+      ...atuais.filter(
+        (item) => item.chat_id || temPergunta(item),
+      ),
     ]);
-
     setConversaAtivaId(conversa.id);
     setPergunta("");
+    setErroOperacao("");
     setPaginaAtual("chat");
     fecharMenu();
   }
 
-  function selecionarConversa(id) {
-    const existe = conversas.some(
-      (conversa) => conversa.id === id,
-    );
+  async function aplicarProjeto(evento) {
+    evento.preventDefault();
+    const idProjeto = projectIdDigitado.trim();
 
-    if (!existe) return;
+    if (idProjeto && !UUID_PATTERN.test(idProjeto)) {
+      setErroOperacao("Informe um UUID de projeto válido.");
+      return;
+    }
+
+    setErroOperacao("");
+    setConversaCarregandoId("historico");
+    try {
+      const dados = await listarConversas(idProjeto || undefined);
+      const conversa = criarConversa(idProjeto);
+      const doServidor = (dados.conversas ?? []).map(
+        converterConversa,
+      );
+      setProjectId(idProjeto);
+      setConversas([conversa, ...doServidor]);
+      setConversaAtivaId(conversa.id);
+      setPergunta("");
+    } catch (error) {
+      setErroOperacao(error.message);
+    } finally {
+      setConversaCarregandoId(null);
+    }
+  }
+
+  async function selecionarConversa(id) {
+    const conversa = conversas.find((item) => item.id === id);
+    if (!conversa) return;
 
     setConversaAtivaId(id);
+    setProjectId(conversa.project_id || "");
+    setProjectIdDigitado(conversa.project_id || "");
     setPergunta("");
+    setErroOperacao("");
     setPaginaAtual("chat");
     fecharMenu();
+
+    if (!conversa.chat_id || conversa.mensagens.length) return;
+
+    setConversaCarregandoId(id);
+    try {
+      const dados = await obterConversa(conversa.chat_id);
+      setConversas((atuais) =>
+        atuais.map((item) =>
+          item.id === id
+            ? { ...item, mensagens: converterHistorico(dados) }
+            : item,
+        ),
+      );
+    } catch (error) {
+      setErroOperacao(error.message);
+    } finally {
+      setConversaCarregandoId(null);
+    }
   }
 
   function adicionarMensagem(conversaId, mensagem) {
     setConversas((atuais) =>
-      atuais.map((conversa) => {
-        if (conversa.id !== conversaId) {
-          return conversa;
-        }
-
-        return {
-          ...conversa,
-          mensagens: [
-            ...conversa.mensagens,
-            mensagem,
-          ],
-        };
-      }),
+      atuais.map((conversa) =>
+        conversa.id === conversaId
+          ? {
+              ...conversa,
+              mensagens: [...conversa.mensagens, mensagem],
+            }
+          : conversa,
+      ),
     );
+  }
+
+  function adotarChatId(conversaId, chatId, idProjeto) {
+    const novoId = String(chatId);
+    setConversas((atuais) =>
+      atuais.map((conversa) =>
+        conversa.id === conversaId
+          ? {
+              ...conversa,
+              id: novoId,
+              chat_id: chatId,
+              project_id: idProjeto || null,
+            }
+          : conversa,
+      ),
+    );
+    setConversaAtivaId((atual) =>
+      atual === conversaId ? novoId : atual,
+    );
+    setConversaCarregandoId((atual) =>
+      atual === conversaId ? novoId : atual,
+    );
+    return novoId;
   }
 
   async function enviarPergunta(texto = pergunta) {
     const perguntaEnviada = texto.trim();
 
-    if (
-      !perguntaEnviada ||
-      carregando ||
-      !conversaAtiva
-    ) {
-      return;
-    }
+    if (!perguntaEnviada || carregando || !conversaAtiva) return;
 
-    const id = conversaAtiva.id;
-
-    setPergunta("");
-    setPaginaAtual("chat");
-    fecharMenu();
-
+    let conversaId = conversaAtiva.id;
+    let chatId = conversaAtiva.chat_id;
+    const idProjeto = conversaAtiva.project_id || "";
     const mensagemUsuario = criarMensagem(
       "usuario",
       perguntaEnviada,
     );
 
+    setPergunta("");
+    setErroOperacao("");
+    setPaginaAtual("chat");
+    fecharMenu();
     setConversas((atuais) =>
       atuais.map((conversa) => {
-        if (conversa.id !== id) {
-          return conversa;
-        }
-
-        const primeiraPergunta =
-          !temPergunta(conversa);
-
+        if (conversa.id !== conversaId) return conversa;
         return {
           ...conversa,
-          titulo: primeiraPergunta
-            ? perguntaEnviada.slice(0, 45)
-            : conversa.titulo,
-          mensagens: [
-            ...conversa.mensagens,
-            mensagemUsuario,
-          ],
+          titulo: temPergunta(conversa)
+            ? conversa.titulo
+            : perguntaEnviada.slice(0, 45),
+          mensagens: [...conversa.mensagens, mensagemUsuario],
         };
       }),
     );
-
-    setConversaCarregandoId(id);
+    setConversaCarregandoId(conversaId);
 
     try {
-      const dados = await consultarArtigos(
-        perguntaEnviada,
-      );
+      try {
+        const dados = await consultarArtigos(perguntaEnviada, {
+          chatId,
+          projectId: idProjeto,
+        });
+        chatId = dados.chat_id;
+        conversaId = adotarChatId(
+          conversaId,
+          chatId,
+          idProjeto,
+        );
+        const artigos = dados.artigos ?? [];
+        adicionarMensagem(
+          conversaId,
+          criarMensagem(
+            "ia",
+            artigos.length
+              ? `Encontrei ${artigos.length} artigo(s) relacionado(s):`
+              : "Não encontrei artigos relacionados. Tente utilizar outros termos.",
+            { artigos },
+          ),
+        );
+      } catch (error) {
+        adicionarMensagem(
+          conversaId,
+          criarMensagem(
+            "ia",
+            `Não foi possível buscar artigos: ${error.message}`,
+          ),
+        );
+        if ([400, 401, 403, 404, 422].includes(error.status)) {
+          return;
+        }
+      }
 
-      const artigos = dados.artigos ?? [];
-
-      adicionarMensagem(
-        id,
-        criarMensagem(
-          "ia",
-          artigos.length > 0
-            ? `Encontrei ${artigos.length} artigo(s) relacionado(s):`
-            : "Não encontrei artigos relacionados. Tente utilizar outros termos.",
-          { artigos },
-        ),
-      );
-    } catch (erro) {
-      console.error(
-        "Erro ao consultar API:",
-        erro,
-      );
-
-      adicionarMensagem(
-        id,
-        criarMensagem(
-          "ia",
-          "Não consegui acessar a API de curadoria. Tente novamente.",
-        ),
-      );
+      try {
+        const resposta = await perguntarAoAssistente(
+          perguntaEnviada,
+          {
+            chatId,
+            projectId: idProjeto,
+          },
+        );
+        chatId = resposta.chat_id;
+        conversaId = adotarChatId(
+          conversaId,
+          chatId,
+          idProjeto,
+        );
+        adicionarMensagem(
+          conversaId,
+          criarMensagem(
+            "ia",
+            resposta.message?.content ||
+              "O assistente não retornou uma resposta textual.",
+            {
+              sources: resposta.message?.sources ?? [],
+            },
+          ),
+        );
+      } catch (error) {
+        adicionarMensagem(
+          conversaId,
+          criarMensagem(
+            "ia",
+            `Não foi possível consultar o assistente: ${error.message}`,
+          ),
+        );
+      }
     } finally {
       setConversaCarregandoId(null);
     }
@@ -289,16 +459,39 @@ export default function ChatPage() {
           <header className="chat-header">
             <h1>Chat com IA</h1>
             <p>
-              Pesquise tecnologias e encontre artigos
-              relacionados.
+              Pesquise tecnologias, converse com o assistente e consulte
+              seu histórico salvo.
             </p>
+            <form
+              className="project-scope"
+              onSubmit={aplicarProjeto}
+            >
+              <label htmlFor="project-id">
+                ID do projeto (opcional)
+              </label>
+              <input
+                id="project-id"
+                value={projectIdDigitado}
+                onChange={(evento) =>
+                  setProjectIdDigitado(evento.target.value)
+                }
+                placeholder="UUID fornecido pelo Módulo 1"
+                disabled={carregando}
+              />
+              <button type="submit" disabled={carregando}>
+                {carregando ? "Carregando..." : "Abrir"}
+              </button>
+            </form>
+            {erroOperacao && (
+              <p className="chat-error" role="alert">
+                {erroOperacao}
+              </p>
+            )}
           </header>
 
           <MessageList
             mensagens={mensagens}
-            carregando={
-              conversaCarregandoId === conversaAtivaId
-            }
+            carregando={conversaCarregandoId === conversaAtivaId}
           />
 
           <div className="composer-area">
@@ -308,9 +501,7 @@ export default function ChatPage() {
                   <button
                     type="button"
                     key={item}
-                    onClick={() =>
-                      enviarPergunta(item)
-                    }
+                    onClick={() => enviarPergunta(item)}
                     disabled={carregando}
                   >
                     {item}
@@ -337,16 +528,10 @@ export default function ChatPage() {
 
   function renderizarPagina() {
     if (paginaAtual === "feed") {
-      return (
-        <FeedPage
-          repositorioAtivo={repositorioAtivo}
-        />
-      );
+      return <FeedPage repositorioAtivo={repositorioAtivo} />;
     }
 
-    if (paginaAtual === "tendencias") {
-      return <EmAltaPage />;
-    }
+    if (paginaAtual === "tendencias") return <EmAltaPage />;
 
     if (paginaAtual === "github") {
       return (
@@ -361,11 +546,7 @@ export default function ChatPage() {
     }
 
     if (paginaAtual === "alertas") {
-      return (
-        <AlertasPage
-          repositorioAtivo={repositorioAtivo}
-        />
-      );
+      return <AlertasPage repositorioAtivo={repositorioAtivo} />;
     }
 
     return null;
@@ -375,6 +556,13 @@ export default function ChatPage() {
     paginaAtual === "chat"
       ? "chat-layout"
       : "chat-layout chat-layout--page";
+  const propriedadesSidebar = {
+    paginaAtual,
+    aoNavegar: navegar,
+    repositorioAtivo,
+    usuario,
+    aoSair,
+  };
 
   return (
     <div
@@ -388,22 +576,16 @@ export default function ChatPage() {
         <button
           type="button"
           className="mobile-icon-button"
-          onClick={() =>
-            alternarMenu("navegacao")
-          }
+          onClick={() => alternarMenu("navegacao")}
           aria-label="Abrir menu de navegação"
-          aria-expanded={
-            menuMobile === "navegacao"
-          }
+          aria-expanded={menuMobile === "navegacao"}
           aria-controls="mobile-navigation"
         >
           <span aria-hidden="true">☰</span>
         </button>
 
         <div className="mobile-brand">
-          <span className="mobile-brand-icon">
-            ✦
-          </span>
+          <span className="mobile-brand-icon">✦</span>
           <span>Curadoria IA</span>
         </div>
 
@@ -411,13 +593,9 @@ export default function ChatPage() {
           <button
             type="button"
             className="mobile-icon-button"
-            onClick={() =>
-              alternarMenu("historico")
-            }
+            onClick={() => alternarMenu("historico")}
             aria-label="Abrir histórico de conversas"
-            aria-expanded={
-              menuMobile === "historico"
-            }
+            aria-expanded={menuMobile === "historico"}
             aria-controls="mobile-history"
           >
             <span aria-hidden="true">☷</span>
@@ -447,11 +625,7 @@ export default function ChatPage() {
         id="mobile-navigation"
         className="mobile-navigation-wrapper"
       >
-        <Sidebar
-          paginaAtual={paginaAtual}
-          aoNavegar={navegar}
-          repositorioAtivo={repositorioAtivo}
-        />
+        <Sidebar {...propriedadesSidebar} />
       </div>
 
       {paginaAtual === "chat" ? (

@@ -205,6 +205,40 @@
   font-weight: 600;
 }
 
+.github-recommendations {
+  margin-top: 22px;
+  padding-top: 4px;
+}
+
+.github-recommendations h3 {
+  margin-bottom: 12px;
+}
+
+.github-recommendations section {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #e2e5ec;
+  border-radius: 8px;
+}
+
+.github-recommendations section > strong {
+  color: #1e2a5a;
+  font-size: 12px;
+}
+
+.github-recommendations ul {
+  display: grid;
+  gap: 8px;
+  margin: 9px 0 0;
+  padding-left: 18px;
+}
+
+.github-recommendations a {
+  color: #1e2a5a;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .github-actions {
   display: flex;
   flex-wrap: wrap;
