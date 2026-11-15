@@ -1,0 +1,394 @@
+
+.mobile-topbar,
+.mobile-backdrop {
+  display: none;
+}
+
+.mobile-navigation-wrapper,
+.mobile-history-wrapper {
+  display: contents;
+}
+
+@media (max-width: 850px) {
+  .chat-layout,
+  .chat-layout--page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    width: 100%;
+    height: 60px;
+    padding: 0 16px;
+    border-bottom: 1px solid #e2e5ec;
+    background: #fff;
+    z-index: 20;
+  }
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: #1e2a5a;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .mobile-brand-icon {
+    color: #5145e5;
+    font-size: 24px;
+  }
+
+  .mobile-icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #1e2a5a;
+    font-size: 24px;
+    cursor: pointer;
+  }
+
+  .mobile-icon-button:hover,
+  .mobile-icon-button:focus-visible {
+    background: #eeedff;
+  }
+
+  .mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: rgba(15, 23, 42, 0.45);
+    cursor: pointer;
+  }
+
+  .chat-layout .sidebar,
+  .chat-layout .history {
+    display: block;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    width: min(300px, 85vw);
+    max-width: 100%;
+    height: 100dvh;
+    padding: 26px 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #fff;
+    box-shadow: 8px 0 30px rgba(0, 0, 0, 0.08);
+    transform: translateX(-110%);
+    transition: transform 0.25s ease;
+    visibility: hidden;
+  }
+
+  .chat-layout.mobile-drawer-navegacao .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .chat-layout.mobile-drawer-historico .history {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .chat-layout .sidebar .brand {
+    margin-bottom: 32px;
+  }
+
+  .chat-layout .nav-item,
+  .chat-layout .history-item {
+    min-height: 44px;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .chat-layout .new-chat-button {
+    min-height: 46px;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .chat-layout .chat,
+  .chat-layout--page > .chat,
+  .chat-layout--page > .feed-page,
+  .chat-layout--page > .github-page {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    flex-shrink: 0;
+    padding: 18px 22px;
+  }
+
+  .chat-header h1 {
+    font-size: 19px;
+  }
+
+  .messages {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 22px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .message,
+  .message--ia {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .message--ia {
+    width: 100%;
+  }
+
+  .article-card {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .composer-area {
+    flex-shrink: 0;
+    width: 100%;
+    padding: 12px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .composer {
+    width: 100%;
+  }
+
+  .composer textarea {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .composer button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    max-width: 100%;
+    padding-bottom: 6px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .suggestions button {
+    flex-shrink: 0;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  .feed-header,
+  .github-header {
+    flex-shrink: 0;
+    padding: 20px;
+  }
+
+  .feed-content,
+  .github-content {
+    flex: 1;
+    min-height: 0;
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .feed-grid {
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(min(100%, 280px), 1fr)
+    );
+  }
+
+  .feed-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .github-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .github-form input {
+    max-width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .feed-control select,
+  .feed-github-form input {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .mobile-topbar {
+    height: 56px;
+    padding: 0 12px;
+  }
+
+  .mobile-brand {
+    font-size: 15px;
+  }
+
+  .chat-header {
+    padding: 16px;
+  }
+
+  .chat-header h1,
+  .feed-header h1,
+  .github-header h1 {
+    font-size: 18px;
+  }
+
+  .chat-header p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .messages {
+    gap: 14px;
+    padding: 16px 12px;
+  }
+
+  .message {
+    max-width: 92%;
+  }
+
+  .message--ia {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .message--usuario {
+    padding: 11px 13px;
+  }
+
+  .article-card {
+    padding: 12px;
+  }
+
+  .composer-area {
+    padding: 10px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .composer-hint {
+    display: none;
+  }
+
+  .suggestions button {
+    font-size: 12px;
+  }
+
+  .feed-header,
+  .github-header {
+    padding: 16px;
+  }
+
+  .feed-content,
+  .github-content {
+    padding: 16px 12px;
+  }
+
+  .feed-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .feed-card {
+    min-height: 150px;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .feed-github,
+  .github-panel,
+  .github-info {
+    padding: 16px;
+  }
+
+  .feed-toolbar,
+  .feed-github-heading,
+  .github-panel-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .feed-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .feed-control,
+  .feed-control select {
+    width: 100%;
+  }
+
+  .feed-count {
+    margin-left: 0;
+  }
+
+  .github-actions {
+    flex-direction: column;
+  }
+
+  .github-actions button,
+  .github-form button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .feed-category-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .feed-category {
+    flex-shrink: 0;
+    min-height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-layout .sidebar,
+  .chat-layout .history {
+    transition: none;
+  }
+}

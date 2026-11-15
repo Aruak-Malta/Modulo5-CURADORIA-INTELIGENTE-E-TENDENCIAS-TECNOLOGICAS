@@ -6,6 +6,34 @@ export default function Sidebar({
   aoNavegar,
   repositorioAtivo = "",
 }) {
+  const itens = [
+    {
+      secao: "CONTEÚDO",
+      paginas: [
+        { id: "feed", nome: "Feed" },
+        { id: "tendencias", nome: "Em alta" },
+      ],
+    },
+    {
+      secao: "INTELIGÊNCIA ARTIFICIAL",
+      paginas: [
+        { id: "chat", nome: "Chat" },
+      ],
+    },
+    {
+      secao: "INTEGRAÇÕES",
+      paginas: [
+        { id: "github", nome: "GitHub" },
+      ],
+    },
+    {
+      secao: "MONITORAMENTO",
+      paginas: [
+        { id: "alertas", nome: "Alertas de Segurança" },
+      ],
+    },
+  ];
+
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -18,89 +46,48 @@ export default function Sidebar({
       </div>
 
       <nav aria-label="Navegação principal">
-        <p className="section-label">CONTEÚDO</p>
+        {itens.map((grupo) => (
+          <div key={grupo.secao}>
+            <p className="section-label">
+              {grupo.secao}
+            </p>
 
-        <button
-          type="button"
-          className={`nav-item ${
-            paginaAtual === "feed"
-              ? "nav-item--active"
-              : ""
-          }`}
-          onClick={() => aoNavegar("feed")}
-        >
-          Feed
-        </button>
+            {grupo.paginas.map((pagina) => (
+              <button
+                key={pagina.id}
+                type="button"
+                className={`nav-item ${
+                  paginaAtual === pagina.id
+                    ? "nav-item--active"
+                    : ""
+                }`}
+                onClick={() => aoNavegar(pagina.id)}
+              >
+                {pagina.nome}
 
-        <button
-          type="button"
-          className={`nav-item ${
-            paginaAtual === "tendencias"
-              ? "nav-item--active"
-              : ""
-          }`}
-          onClick={() => aoNavegar("tendencias")}
-        >
-          Em alta
-        </button>
-
-        <p className="section-label">
-          INTELIGÊNCIA ARTIFICIAL
-        </p>
-
-        <button
-          type="button"
-          className={`nav-item ${
-            paginaAtual === "chat"
-              ? "nav-item--active"
-              : ""
-          }`}
-          onClick={() => aoNavegar("chat")}
-        >
-          Chat
-        </button>
-
-        <p className="section-label">
-          INTEGRAÇÕES
-        </p>
-
-        <button
-          type="button"
-          className={`nav-item ${
-            paginaAtual === "github"
-              ? "nav-item--active"
-              : ""
-          }`}
-          onClick={() => aoNavegar("github")}
-        >
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "8px",
-            }}
-          >
-            <span>GitHub</span>
-
-            <span
-              title={
-                repositorioAtivo
-                  ? "Repositório conectado"
-                  : "Nenhum repositório conectado"
-              }
-              style={{
-                width: "8px",
-                height: "8px",
-                flexShrink: 0,
-                borderRadius: "50%",
-                background: repositorioAtivo
-                  ? "#16a34a"
-                  : "#a0a5b5",
-              }}
-            />
-          </span>
-        </button>
+                {pagina.id === "github" && (
+                  <span
+                    title={
+                      repositorioAtivo
+                        ? "Repositório conectado"
+                        : "Nenhum repositório conectado"
+                    }
+                    style={{
+                      display: "inline-block",
+                      width: "8px",
+                      height: "8px",
+                      marginLeft: "8px",
+                      borderRadius: "50%",
+                      background: repositorioAtivo
+                        ? "#16a34a"
+                        : "#a0a5b5",
+                    }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        ))}
       </nav>
 
       <div className="api-status">
