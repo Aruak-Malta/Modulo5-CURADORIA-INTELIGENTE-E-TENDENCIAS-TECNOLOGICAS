@@ -3,7 +3,10 @@ import { apiRequest } from "./apiClient.js";
 export function entrar(username, password) {
   return apiRequest("/auth/login", {
     method: "POST",
-    json: { username, password },
+    json: {
+      username,
+      password,
+    },
     includeAuth: false,
     allowRefresh: false,
   });
@@ -23,5 +26,8 @@ export function obterSessao() {
 }
 
 export function sair() {
-  return apiRequest("/auth/logout", { method: "POST", json: {} });
+  return apiRequest("/auth/logout", {
+    method: "POST",
+    json: {},
+  });
 }

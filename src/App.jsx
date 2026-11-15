@@ -20,17 +20,27 @@ export default function App() {
 
       try {
         const sessao = await obterSessao();
-        if (ativo) setUsuario(sessao);
+
+        if (ativo) {
+          setUsuario(sessao);
+        }
       } catch (error) {
         if (!ativo) return;
-        if (error.status === 401) clearTokens();
+
+        if (error.status === 401) {
+          clearTokens();
+        }
+
         setErroSessao(error.message);
       } finally {
-        if (ativo) setVerificando(false);
+        if (ativo) {
+          setVerificando(false);
+        }
       }
     }
 
     verificarSessao();
+
     return () => {
       ativo = false;
     };
@@ -46,6 +56,7 @@ export default function App() {
       "curadoria:session-expired",
       encerrarPorExpiracao,
     );
+
     return () => {
       window.removeEventListener(
         "curadoria:session-expired",
@@ -55,7 +66,8 @@ export default function App() {
   }, []);
 
   async function encerrarSessao() {
-    let erro;
+    let erro = "";
+
     try {
       await sair();
     } catch (error) {
@@ -63,7 +75,7 @@ export default function App() {
     } finally {
       clearTokens();
       setUsuario(null);
-      setErroSessao(erro || "");
+      setErroSessao(erro);
     }
   }
 
@@ -87,5 +99,10 @@ export default function App() {
     );
   }
 
-  return <ChatPage usuario={usuario} aoSair={encerrarSessao} />;
+  return (
+    <ChatPage
+      usuario={usuario}
+      aoSair={encerrarSessao}
+    />
+  );
 }

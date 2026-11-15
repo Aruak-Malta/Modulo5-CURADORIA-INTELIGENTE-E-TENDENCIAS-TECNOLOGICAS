@@ -1,0 +1,515 @@
+:root {
+  --color-primary: #1e2a5a;
+  --color-primary-hover: #2f3f7f;
+  --color-brand-accent: #c8102e;
+
+  --color-bg: #f6f7fa;
+  --color-surface: #ffffff;
+  --color-border: #e2e5ec;
+  --color-text: #1a1d29;
+  --color-text-muted: #5b6275;
+
+  --color-priority-critical: #dc2626;
+  --color-priority-high: #ea580c;
+  --color-priority-medium: #b45309;
+  --color-priority-low: #64748b;
+  --color-success: #16a34a;
+
+  --chart-1: #3b5bdb;
+  --chart-2: #0ea5a4;
+  --chart-3: #8b5cf6;
+  --chart-4: #f59e0b;
+  --chart-5: #ec4899;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+
+  --color-subtle: #fafbff;
+  --color-hover: #eeedff;
+  --color-link: #1e2a5a;
+  --color-active-text: #1e2a5a;
+  --color-contrast: #ffffff;
+  --color-danger-bg: #fef2f2;
+  --color-danger-text: #b91c1c;
+  --color-danger-border: #fecaca;
+  --color-warning-bg: #fffbeb;
+  --color-warning-text: #92400e;
+  --color-warning-border: #f5dea8;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #0f1220;
+  --color-surface: #181c2e;
+  --color-border: #2a2f45;
+  --color-text: #e8eaf2;
+  --color-text-muted: #9aa0b4;
+
+  --color-subtle: #20253a;
+  --color-hover: #283453;
+  --color-link: #bac7ff;
+  --color-active-text: #dce3ff;
+  --color-contrast: #ffffff;
+
+  --color-danger-bg: #381e2b;
+  --color-danger-text: #ffb4c2;
+  --color-danger-border: #79384a;
+
+  --color-warning-bg: #3b301c;
+  --color-warning-text: #f9d28b;
+  --color-warning-border: #775b2b;
+}
+
+html,
+body,
+#root {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-sans);
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+}
+
+.theme-toggle {
+  position: fixed;
+  left: 16px;
+  bottom: 18px;
+  z-index: 80;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-width: 158px;
+  min-height: 43px;
+  padding: 10px 14px;
+
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+
+  background: var(--color-surface);
+  color: var(--color-text);
+
+  font-size: var(--text-sm);
+  font-weight: 500;
+
+  cursor: pointer;
+
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.08);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--color-hover);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.theme-toggle-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.theme-toggle-label {
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] :is(
+  .chat-layout,
+  .chat,
+  .sidebar,
+  .history,
+  .chat-header,
+  .composer-area,
+  .feed-page,
+  .feed-header,
+  .github-page,
+  .github-header,
+  .em-alta-page,
+  .em-alta-header,
+  .alertas-page,
+  .alertas-header,
+  .mobile-topbar
+) {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-content,
+  .github-content,
+  .em-alta-content,
+  .alertas-content,
+  .messages
+) {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] :is(
+  .sidebar,
+  .history,
+  .chat-header,
+  .feed-header,
+  .github-header,
+  .em-alta-header,
+  .alertas-header,
+  .mobile-topbar
+) {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-github,
+  .feed-card,
+  .feed-empty,
+  .github-panel,
+  .github-info,
+  .github-steps > div,
+  .em-alta-resumo > div,
+  .em-alta-principal,
+  .em-alta-card,
+  .em-alta-vazio,
+  .alertas-indicador,
+  .alertas-repositorio,
+  .alerta-card,
+  .alertas-vazio,
+  .article-card,
+  .composer,
+  .suggestions button
+) {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] :is(
+  .brand strong,
+  .chat-header h1,
+  .feed-header h1,
+  .feed-github h2,
+  .feed-categories h2,
+  .feed-toolbar h2,
+  .feed-card h3,
+  .github-header h1,
+  .github-panel h2,
+  .github-panel h3,
+  .github-info h2,
+  .em-alta-header h1,
+  .em-alta-filtros h2,
+  .em-alta-destaque h2,
+  .em-alta-ranking h2,
+  .em-alta-principal h3,
+  .em-alta-card h3,
+  .alertas-header h1,
+  .alertas-repositorio h2,
+  .alertas-resultados h2,
+  .alerta-card h3,
+  .article-card strong,
+  .mobile-brand,
+  .message--ia
+) {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] :is(
+  .brand small,
+  .section-label,
+  .chat-header p,
+  .history__empty,
+  .history-item,
+  .api-status,
+  .feed-header p,
+  .feed-github p,
+  .feed-toolbar p,
+  .feed-count,
+  .feed-updated,
+  .feed-date,
+  .feed-language,
+  .feed-control label,
+  .feed-github-status,
+  .github-header p,
+  .github-help,
+  .github-panel-heading p,
+  .github-info > p,
+  .github-steps span,
+  .em-alta-header p,
+  .em-alta-resumo span,
+  .em-alta-principal p,
+  .em-alta-card p,
+  .em-alta-fonte,
+  .em-alta-rodape p,
+  .alertas-header p,
+  .alertas-indicador span,
+  .alerta-card p,
+  .alertas-aviso,
+  .article-card span,
+  .loading,
+  .composer-hint
+) {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-github-form input,
+  .feed-control select,
+  .github-form input,
+  .composer,
+  .composer textarea,
+  .feed-category,
+  .em-alta-categoria,
+  .github-secondary-button,
+  .feed-github-form .feed-github-remove,
+  .suggestions button,
+  .feed-github-status
+) {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] :is(
+  input,
+  textarea,
+  select
+)::placeholder {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] :is(
+  .nav-item,
+  .history-item,
+  .mobile-icon-button
+) {
+  color: var(--color-text-muted);
+}
+
+:root[data-theme="dark"] :is(
+  .nav-item:hover,
+  .history-item:hover,
+  .mobile-icon-button:hover,
+  .em-alta-categoria:hover,
+  .suggestions button:hover
+) {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] :is(
+  .nav-item--active,
+  .nav-item--active:hover,
+  .history-item--active,
+  .history-item--active:hover,
+  .feed-category--active,
+  .feed-category--active:hover,
+  .em-alta-categoria.ativa
+) {
+  background: var(--color-hover);
+  color: var(--color-active-text);
+  border-color: var(--color-primary-hover);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-stack-item,
+  .feed-source,
+  .em-alta-tag,
+  .alertas-stack span,
+  .github-stack-item
+) {
+  background: var(--color-hover);
+  color: var(--color-active-text);
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-repository-detail,
+  .em-alta-rodape
+) {
+  border-color: var(--color-border);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-repository-detail > a,
+  .feed-card-link,
+  .github-repository-link,
+  .em-alta-card-bottom a,
+  .alertas-repositorio a,
+  .alerta-card-bottom a
+) {
+  color: var(--color-link);
+}
+
+:root[data-theme="dark"] :is(
+  .em-alta-resumo strong,
+  .em-alta-posicao,
+  .alertas-indicador strong,
+  .github-steps strong
+) {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-theme="dark"] :is(
+  .feed-refresh,
+  .github-primary-button,
+  .em-alta-atualizar,
+  .alertas-atualizar,
+  .new-chat-button,
+  .composer button:not(:disabled),
+  .message--usuario
+) {
+  background: var(--color-primary);
+  color: var(--color-contrast);
+  border-color: var(--color-primary);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-refresh:hover:not(:disabled),
+  .github-primary-button:hover:not(:disabled),
+  .new-chat-button:hover
+) {
+  background: var(--color-primary-hover);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-card:hover,
+  .article-card:hover
+) {
+  border-color: var(--color-primary-hover);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-error,
+  .github-error,
+  .alertas-erro,
+  .em-alta-erro
+) {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border-color: var(--color-danger-border);
+}
+
+:root[data-theme="dark"] .feed-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border-color: var(--color-warning-border);
+}
+
+:root[data-theme="dark"] .github-status--connected {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-success);
+}
+
+:root[data-theme="dark"] .alerta-gravidade--critico {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+:root[data-theme="dark"] .alerta-gravidade--alto {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+:root[data-theme="dark"] .alerta-gravidade--medio {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+:root[data-theme="dark"] .api-status {
+  background: var(--color-surface);
+}
+
+:root[data-theme="dark"] .api-status span {
+  background: var(--color-success);
+}
+
+:root[data-theme="dark"] .mobile-brand-icon,
+:root[data-theme="dark"] .brand__icon {
+  color: var(--color-text);
+}
+
+:root[data-theme="dark"] :is(
+  .feed-count,
+  .em-alta-resumo strong,
+  .alertas-indicador strong
+) {
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-theme="dark"] :is(
+  .chat-layout .sidebar,
+  .chat-layout .history
+) {
+  background: var(--color-surface);
+}
+
+@media (max-width: 850px) {
+  .theme-toggle {
+    left: auto;
+    right: 16px;
+    bottom: 16px;
+    min-width: 140px;
+    z-index: 70;
+  }
+
+  :root[data-theme="dark"] :is(
+    .chat-layout .sidebar,
+    .chat-layout .history,
+    .mobile-topbar
+  ) {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+}
+
+@media (max-width: 560px) {
+  .theme-toggle {
+    right: 12px;
+    bottom: 12px;
+    padding: 9px 12px;
+    min-width: 126px;
+    min-height: 40px;
+    font-size: 12px;
+  }
+
+  .theme-toggle-icon {
+    font-size: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle {
+    transition: none;
+  }
+}
