@@ -5,6 +5,8 @@ export default function Sidebar({
   paginaAtual = "chat",
   aoNavegar,
   repositorioAtivo = "",
+  usuario,
+  aoSair,
 }) {
   const itens = [
     {
@@ -90,6 +92,16 @@ export default function Sidebar({
         ))}
       </nav>
 
+      <div className="sidebar-account">
+        <div className="sidebar-account__identity">
+          <strong>{usuario.display_name}</strong>
+          <span>{usuario.email}</span>
+        </div>
+        <button type="button" onClick={aoSair}>
+          Sair
+        </button>
+      </div>
+
       <div className="api-status">
         <span />
         API de curadoria
@@ -102,4 +114,9 @@ Sidebar.propTypes = {
   paginaAtual: PropTypes.string,
   aoNavegar: PropTypes.func.isRequired,
   repositorioAtivo: PropTypes.string,
+  usuario: PropTypes.shape({
+    display_name: PropTypes.string.isRequired,
+    email: PropTypes.string.isRequired,
+  }).isRequired,
+  aoSair: PropTypes.func.isRequired,
 };
