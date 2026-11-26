@@ -1,6 +1,14 @@
+
 import { apiRequest } from "./apiClient.js";
 
-export function consultarArtigos(pergunta, { chatId, projectId } = {}) {
+// ==========================================
+// CONSULTAS DE ARTIGOS
+// ==========================================
+
+export function consultarArtigos(
+  pergunta,
+  { chatId, projectId } = {},
+) {
   return apiRequest("/consultas", {
     method: "POST",
     json: {
@@ -10,6 +18,10 @@ export function consultarArtigos(pergunta, { chatId, projectId } = {}) {
     },
   });
 }
+
+// ==========================================
+// ASSISTENTE DO MÓDULO 7
+// ==========================================
 
 export function perguntarAoAssistente(
   pergunta,
@@ -25,18 +37,61 @@ export function perguntarAoAssistente(
   });
 }
 
+// ==========================================
+// HISTÓRICO DE CONVERSAS
+// ==========================================
+
 export function listarConversas(projectId) {
   const parametros = new URLSearchParams();
-  if (projectId) parametros.set("project_id", projectId);
+
+  if (projectId) {
+    parametros.set("project_id", projectId);
+  }
+
   const query = parametros.toString();
-  return apiRequest(`/conversas${query ? `?${query}` : ""}`);
+
+  return apiRequest(
+    `/conversas${query ? `?${query}` : ""}`,
+  );
 }
 
 export function obterConversa(chatId) {
-  return apiRequest(`/conversas/${encodeURIComponent(chatId)}`);
+  return apiRequest(
+    `/conversas/${encodeURIComponent(chatId)}`,
+  );
 }
 
-export function salvarRepositorioProjeto(projectId, repositorio) {
+// ==========================================
+// GITHUB — MÓDULO 5
+// ==========================================
+
+// Salva o repositório associado ao usuário
+// autenticado pelo Módulo 1.
+export function salvarRepositorioUsuario(repositorio) {
+  return apiRequest("/github/repositorios", {
+    method: "POST",
+    json: { repositorio },
+  });
+}
+
+// Lista os repositórios do usuário.
+export function listarRepositoriosUsuario() {
+  return apiRequest("/github/repositorios");
+}
+
+// Recupera recomendações salvas.
+export function listarRecomendacoesUsuario() {
+  return apiRequest("/github/recomendacoes");
+}
+
+// ==========================================
+// COMPATIBILIDADE COM ROTAS ANTIGAS
+// ==========================================
+
+export function salvarRepositorioProjeto(
+  projectId,
+  repositorio,
+) {
   return apiRequest(
     `/projetos/${encodeURIComponent(projectId)}/repositorios`,
     {
