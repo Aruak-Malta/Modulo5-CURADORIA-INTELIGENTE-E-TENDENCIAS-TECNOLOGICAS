@@ -25,10 +25,6 @@ const CATEGORIAS_PADRAO = [
     id: "devops",
     nome: "DevOps e Infraestrutura",
   },
-  {
-    id: "computacao-quantica",
-    nome: "Computação Quântica",
-  },
 ];
 
 function formatarData(valor) {

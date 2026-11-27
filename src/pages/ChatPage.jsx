@@ -22,9 +22,6 @@ const sugestoes = [
   "Novidades sobre inteligência artificial",
 ];
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function criarMensagem(tipo, texto, adicionais = {}) {
   return {
     id: crypto.randomUUID(),
@@ -129,8 +126,6 @@ export default function ChatPage({ usuario, aoSair }) {
   const [conversaAtivaId, setConversaAtivaId] = useState(
     conversaInicial.id,
   );
-  const [projectId, setProjectId] = useState("");
-  const [projectIdDigitado, setProjectIdDigitado] = useState("");
   const [pergunta, setPergunta] = useState("");
   const [conversaCarregandoId, setConversaCarregandoId] =
     useState(null);
@@ -230,7 +225,7 @@ export default function ChatPage({ usuario, aoSair }) {
   }
 
   function novaConversa() {
-    const conversa = criarConversa(projectId);
+    const conversa = criarConversa();
     setConversas((atuais) => [
       conversa,
       ...atuais.filter(
@@ -244,41 +239,11 @@ export default function ChatPage({ usuario, aoSair }) {
     fecharMenu();
   }
 
-  async function aplicarProjeto(evento) {
-    evento.preventDefault();
-    const idProjeto = projectIdDigitado.trim();
-
-    if (idProjeto && !UUID_PATTERN.test(idProjeto)) {
-      setErroOperacao("Informe um UUID de projeto válido.");
-      return;
-    }
-
-    setErroOperacao("");
-    setConversaCarregandoId("historico");
-    try {
-      const dados = await listarConversas(idProjeto || undefined);
-      const conversa = criarConversa(idProjeto);
-      const doServidor = (dados.conversas ?? []).map(
-        converterConversa,
-      );
-      setProjectId(idProjeto);
-      setConversas([conversa, ...doServidor]);
-      setConversaAtivaId(conversa.id);
-      setPergunta("");
-    } catch (error) {
-      setErroOperacao(error.message);
-    } finally {
-      setConversaCarregandoId(null);
-    }
-  }
-
   async function selecionarConversa(id) {
     const conversa = conversas.find((item) => item.id === id);
     if (!conversa) return;
 
     setConversaAtivaId(id);
-    setProjectId(conversa.project_id || "");
-    setProjectIdDigitado(conversa.project_id || "");
     setPergunta("");
     setErroOperacao("");
     setPaginaAtual("chat");
@@ -462,26 +427,6 @@ export default function ChatPage({ usuario, aoSair }) {
               Pesquise tecnologias, converse com o assistente e consulte
               seu histórico salvo.
             </p>
-            <form
-              className="project-scope"
-              onSubmit={aplicarProjeto}
-            >
-              <label htmlFor="project-id">
-                ID do projeto (opcional)
-              </label>
-              <input
-                id="project-id"
-                value={projectIdDigitado}
-                onChange={(evento) =>
-                  setProjectIdDigitado(evento.target.value)
-                }
-                placeholder="UUID fornecido pelo Módulo 1"
-                disabled={carregando}
-              />
-              <button type="submit" disabled={carregando}>
-                {carregando ? "Carregando..." : "Abrir"}
-              </button>
-            </form>
             {erroOperacao && (
               <p className="chat-error" role="alert">
                 {erroOperacao}
