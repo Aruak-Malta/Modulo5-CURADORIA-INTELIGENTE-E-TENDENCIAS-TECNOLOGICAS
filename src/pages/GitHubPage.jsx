@@ -1,15 +1,14 @@
 
 import { useState } from "react";
 import PropTypes from "prop-types";
-import {
-  listarRecomendacoesProjeto,
-  listarRepositoriosProjeto,
-  salvarRepositorioProjeto,
-} from "../services/curadoriaApi";
-import "./GitHubPage.css";
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import {
+  salvarRepositorioUsuario,
+  listarRepositoriosUsuario,
+  listarRecomendacoesUsuario,
+} from "../services/curadoriaApi";
+
+import "./GitHubPage.css";
 
 function normalizarRepositorio(valor) {
   return valor
@@ -19,9 +18,7 @@ function normalizarRepositorio(valor) {
 }
 
 function validarRepositorio(valor) {
-  return /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(
-    valor,
-  );
+  return /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(valor);
 }
 
 export default function GitHubPage({
@@ -33,45 +30,49 @@ export default function GitHubPage({
 }) {
   const [repositorioDigitado, setRepositorioDigitado] =
     useState(repositorioAtivo || "");
-  const [projectId, setProjectId] = useState("");
+
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
   const [recomendacoes, setRecomendacoes] = useState([]);
 
   async function carregarIntegracao() {
-    if (!UUID_PATTERN.test(projectId.trim())) {
-      setErro("Informe o UUID de um projeto ao qual sua conta tenha acesso.");
-      return;
-    }
-
     setErro("");
     setCarregando(true);
+
     try {
-      const [dadosRepositorios, dadosRecomendacoes] = await Promise.all([
-        listarRepositoriosProjeto(projectId.trim()),
-        listarRecomendacoesProjeto(projectId.trim()),
-      ]);
-      const repositorioSalvo = dadosRepositorios.repositorios?.[0];
+      const [dadosRepositorios, dadosRecomendacoes] =
+        await Promise.all([
+          listarRepositoriosUsuario(),
+          listarRecomendacoesUsuario(),
+        ]);
+
+      const repositorioSalvo =
+        dadosRepositorios.repositorios?.[0];
+
       if (!repositorioSalvo) {
-        setErro("Não há repositório salvo para este projeto.");
+        setErro("Nenhum repositório salvo para sua conta.");
         return;
       }
 
       const repositorio = normalizarRepositorio(
         repositorioSalvo.repositorio,
       );
+
       setRepositorioDigitado(repositorio);
+
       aoConectar({
         repositorio,
         stack: repositorioSalvo.stack_detectada ?? [],
       });
 
       const grupos = new Map();
+
       for (const artigo of dadosRecomendacoes.recomendacoes ?? []) {
         const grupo = grupos.get(artigo.tecnologia) ?? [];
         grupo.push(artigo);
         grupos.set(artigo.tecnologia, grupo);
       }
+
       setRecomendacoes(
         [...grupos].map(([tecnologia, artigos]) => ({
           tecnologia,
@@ -79,7 +80,7 @@ export default function GitHubPage({
         })),
       );
     } catch (error) {
-      setErro(error.message);
+      setErro(error.message || "Erro ao carregar integração.");
     } finally {
       setCarregando(false);
     }
@@ -94,13 +95,8 @@ export default function GitHubPage({
 
     if (!validarRepositorio(repositorio)) {
       setErro(
-        "Informe um repositório válido no formato usuario/repositorio.",
+        "Informe um repositório válido: usuario/repositorio.",
       );
-      return;
-    }
-
-    if (!UUID_PATTERN.test(projectId.trim())) {
-      setErro("Informe o UUID de um projeto ao qual sua conta tenha acesso.");
       return;
     }
 
@@ -108,20 +104,21 @@ export default function GitHubPage({
     setCarregando(true);
 
     try {
-      const resultado = await salvarRepositorioProjeto(
-        projectId.trim(),
+      const resultado = await salvarRepositorioUsuario(
         repositorio,
       );
 
       setRecomendacoes(resultado.recomendacoes ?? []);
+
       aoConectar({
         repositorio: resultado.repositorio,
-        stack: resultado.stackDetectada,
+        stack: resultado.stack_detectada ?? [],
       });
+
     } catch (error) {
       setErro(
         error.message ||
-          "Não foi possível analisar o repositório.",
+          "Não foi possível conectar o repositório.",
       );
     } finally {
       setCarregando(false);
@@ -130,6 +127,7 @@ export default function GitHubPage({
 
   function remover() {
     setRepositorioDigitado("");
+    setRecomendacoes([]);
     setErro("");
     aoRemover();
   }
@@ -141,7 +139,7 @@ export default function GitHubPage({
         <p>
           Conecte um repositório público para receber
           notícias e recomendações relacionadas às
-          tecnologias utilizadas no seu projeto.
+          tecnologias utilizadas.
         </p>
       </header>
 
@@ -182,27 +180,9 @@ export default function GitHubPage({
               type="text"
               value={repositorioDigitado}
               onChange={(evento) =>
-                setRepositorioDigitado(
-                  evento.target.value,
-                )
+                setRepositorioDigitado(evento.target.value)
               }
               placeholder="usuario/repositorio"
-              autoComplete="off"
-              spellCheck={false}
-              disabled={carregando}
-            />
-
-            <label htmlFor="github-project-id">
-              UUID do projeto no Módulo 1
-            </label>
-            <input
-              id="github-project-id"
-              type="text"
-              value={projectId}
-              onChange={(evento) =>
-                setProjectId(evento.target.value)
-              }
-              placeholder="00000000-0000-0000-0000-000000000000"
               autoComplete="off"
               spellCheck={false}
               disabled={carregando}
@@ -215,7 +195,7 @@ export default function GitHubPage({
             >
               {carregando
                 ? "Salvando integração..."
-                : "Salvar no projeto"}
+                : "Salvar repositório"}
             </button>
 
             <button
@@ -229,18 +209,16 @@ export default function GitHubPage({
           </form>
 
           {erro && (
-            <div
-              className="github-error"
-              role="alert"
-            >
+            <div className="github-error" role="alert">
               {erro}
             </div>
           )}
 
           <p className="github-help">
-            A API verifica seu acesso ao projeto e salva o repositório,
-            a stack e as recomendações no PostgreSQL. O repositório precisa
-            ser público; nenhuma senha ou token GitHub é necessário.
+            O Módulo 5 salva o repositório, a stack e
+            as recomendações no PostgreSQL, associados
+            à sua conta autenticada pelo Módulo 1.
+            O repositório precisa ser público.
           </p>
         </section>
 
@@ -276,18 +254,19 @@ export default function GitHubPage({
               </div>
             ) : (
               <p className="github-help">
-                O repositório foi acessado, mas
-                nenhuma tecnologia conhecida foi
-                identificada nos arquivos analisados.
+                Nenhuma tecnologia conhecida foi
+                identificada no repositório.
               </p>
             )}
 
             {recomendacoes.length > 0 && (
               <div className="github-recommendations">
                 <h3>Recomendações salvas</h3>
+
                 {recomendacoes.map((grupo) => (
                   <section key={grupo.tecnologia}>
                     <strong>{grupo.tecnologia}</strong>
+
                     <ul>
                       {grupo.artigos.map((artigo) => (
                         <li key={artigo.link}>
@@ -323,8 +302,10 @@ export default function GitHubPage({
                 Limpar seleção desta sessão
               </button>
             </div>
+
             <p className="github-help">
-              Limpar a seleção não apaga o vínculo persistido no projeto.
+              Limpar a seleção não exclui os dados
+              armazenados no PostgreSQL.
             </p>
           </section>
         )}
@@ -335,23 +316,21 @@ export default function GitHubPage({
           <p>
             O agente analisa arquivos de configuração
             do repositório, identifica tecnologias
-            utilizadas e aumenta a prioridade de
-            notícias relacionadas à stack detectada.
+            utilizadas e prioriza notícias relacionadas
+            à stack detectada.
           </p>
 
           <div className="github-steps">
             <div>
               <strong>1. Repositório</strong>
-              <span>
-                Leitura de arquivos públicos.
-              </span>
+              <span>Leitura de arquivos públicos.</span>
             </div>
 
             <div>
               <strong>2. Tecnologias</strong>
               <span>
-                Identificação de frameworks,
-                linguagens e ferramentas.
+                Identificação de linguagens,
+                frameworks e ferramentas.
               </span>
             </div>
 

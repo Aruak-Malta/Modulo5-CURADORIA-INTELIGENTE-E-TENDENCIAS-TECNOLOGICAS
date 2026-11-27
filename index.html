@@ -1,17 +1,35 @@
+
 <!doctype html>
 <html lang="pt-BR">
   <head>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
     <meta
       name="description"
       content="Assistente de curadoria de artigos sobre tecnologia."
     />
+
     <title>Curadoria IA</title>
+
+    <!-- Identifica o Módulo 5 na barra compartilhada -->
+    <script>
+      window.MODULO_ATUAL = 5;
+    </script>
+
+    <!-- Barra de navegação original dos módulos -->
+    <script defer src="/nav.js"></script>
   </head>
+
   <body>
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

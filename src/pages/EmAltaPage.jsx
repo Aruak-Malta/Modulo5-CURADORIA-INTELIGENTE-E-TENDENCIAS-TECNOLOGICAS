@@ -8,8 +8,6 @@ const CATEGORIAS = [
   "Inteligência Artificial",
   "Desenvolvimento",
   "Segurança",
-  "DevOps",
-  "Computação Quântica",
   "Outros",
 ];
 
